@@ -60,9 +60,9 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ data, onBack }) => {
         </div>
       )}
 
-      <main className="mx-auto w-[90%] max-w-[540px] space-y-3 pb-10">
+      <main className="mx-auto w-[90%] max-w-[540px] space-y-2.5 pb-10">
         {sortedSessions.length === 0 ? (
-          <div className="rounded-3xl bg-white p-6 text-center text-sm text-[#002B5B]/65">
+          <div className="rounded-2xl bg-white p-5 text-center text-sm text-[#002B5B]/65">
             No attendance has been saved yet. Open a Program &gt; Semester &gt;
             Subject to mark attendance and generate an Excel sheet.
           </div>
@@ -82,17 +82,17 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ data, onBack }) => {
             return (
               <div
                 key={sess.id}
-                className="flex items-center justify-between gap-3 rounded-3xl bg-white p-4"
+                className="flex items-center justify-between gap-3 rounded-2xl bg-white p-3.5"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-base font-semibold text-[#002B5B]">
+                  <p className="truncate text-sm font-semibold text-[#002B5B]">
                     {subject?.name ?? 'Unknown Subject'}
                   </p>
-                  <p className="truncate text-xs text-[#002B5B]/65">
+                  <p className="mt-0.5 truncate text-xs text-[#002B5B]/65">
                     {program?.name ?? '-'} • {semester?.name ?? '-'} •{' '}
-                    {sess.date}
+                    <span className="tabular-nums">{sess.date}</span>
                   </p>
-                  <p className="mt-1 text-xs font-medium text-[#002B5B]/80">
+                  <p className="mt-1 text-xs font-medium tabular-nums text-[#002B5B]/80">
                     P: {pCount} · A: {aCount} · L: {lCount}
                   </p>
                 </div>
@@ -100,7 +100,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ data, onBack }) => {
                 <button
                   type="button"
                   onClick={() => handleExportSession(sess)}
-                  className="shrink-0 rounded-full bg-[#6495ED] px-4 py-2.5 text-xs font-semibold text-[#002B5B] active:opacity-80"
+                  className="shrink-0 rounded-full bg-[#6495ED] px-4 py-2 text-xs font-semibold text-[#002B5B] active:opacity-80"
                 >
                   Excel
                 </button>

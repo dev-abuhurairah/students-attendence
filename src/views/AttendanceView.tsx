@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type {
   AppData,
   AttendanceSession,
@@ -34,6 +34,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
   const [date, setDate] = useState<string>(getTodayISO());
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const timerRef = useRef<number | null>(null);
 
   const students = useMemo(
     () =>
@@ -54,11 +55,19 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
     Record<string, AttendanceStatus>
   >(() => existingSession?.records ?? {});
 
+  useEffect(() => {
+    setDraftRecords(existingSession?.records ?? {});
+  }, [sessionId, existingSession]);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) window.clearTimeout(timerRef.current);
+    };
+  }, []);
+
   const handleDateChange = (newDate: string) => {
+    if (!newDate) return;
     setDate(newDate);
-    const nextId = `${subject.id}__${newDate}`;
-    const found = data.sessions.find((s) => s.id === nextId);
-    setDraftRecords(found?.records ?? {});
   };
 
   const setStudentStatus = (studentId: string, status: AttendanceStatus) => {
@@ -90,8 +99,9 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
   }, [draftRecords, students]);
 
   const notify = (msg: string) => {
+    if (timerRef.current) window.clearTimeout(timerRef.current);
     setStatusMessage(msg);
-    setTimeout(() => setStatusMessage(null), 3000);
+    timerRef.current = window.setTimeout(() => setStatusMessage(null), 3000);
   };
 
   const buildSession = (): AttendanceSession => ({
@@ -161,40 +171,40 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
         onBack={onBack}
       />
 
-      <main className="mx-auto w-[92%] max-w-[580px] space-y-4">
+      <main className="mx-auto w-[90%] max-w-[540px] space-y-3">
         {/* Date & Teacher Info Bar */}
-        <div className="rounded-3xl bg-white p-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-[#002B5B]/60">
+        <div className="rounded-2xl bg-white p-3.5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-[#002B5B]/60">
                 Teacher
               </p>
-              <p className="text-base font-semibold text-[#002B5B]">
+              <p className="truncate text-sm font-semibold text-[#002B5B]">
                 {subject.teacherName}
               </p>
             </div>
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wide text-[#002B5B]/60">
+            <div className="shrink-0 text-right">
+              <label className="block text-[11px] font-semibold uppercase tracking-wide text-[#002B5B]/60">
                 Date
               </label>
               <input
                 type="date"
                 value={date}
                 onChange={(e) => handleDateChange(e.target.value)}
-                className="mt-0.5 rounded-xl bg-[#F8FAFF] px-3 py-1.5 text-sm font-medium text-[#002B5B] outline-none ring-1 ring-[#6495ED]/30"
+                className="mt-0.5 rounded-xl bg-[#F8FAFF] px-2.5 py-1 text-xs font-medium text-[#002B5B] outline-none ring-1 ring-[#6495ED]/30"
               />
             </div>
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-[#F0F4FF] pt-3">
-            <div className="flex gap-2 text-xs font-semibold">
-              <span className="rounded-full bg-emerald-100 px-3 py-1 text-emerald-800">
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[#F0F4FF] pt-2.5">
+            <div className="flex gap-1.5 text-[11px] font-semibold tabular-nums">
+              <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-emerald-800">
                 P: {counts.present}
               </span>
-              <span className="rounded-full bg-red-100 px-3 py-1 text-red-800">
+              <span className="rounded-full bg-red-100 px-2.5 py-1 text-red-800">
                 A: {counts.absent}
               </span>
-              <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-800">
+              <span className="rounded-full bg-amber-100 px-2.5 py-1 text-amber-800">
                 L: {counts.leave}
               </span>
             </div>
@@ -203,7 +213,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
               <button
                 type="button"
                 onClick={markAllPresent}
-                className="rounded-full bg-[#6495ED]/20 px-3.5 py-1.5 text-xs font-semibold text-[#002B5B] active:opacity-75"
+                className="rounded-full bg-[#6495ED]/20 px-3 py-1 text-[11px] font-semibold text-[#002B5B] active:opacity-75"
               >
                 Mark All Present
               </button>
@@ -219,38 +229,38 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
 
         {/* Student List */}
         {students.length === 0 ? (
-          <div className="rounded-3xl bg-white p-6 text-center text-sm text-[#002B5B]/70">
+          <div className="rounded-2xl bg-white p-5 text-center text-sm text-[#002B5B]/70">
             No students found in {program.name} ({semester.name}). Go to Setup
             &gt; Students to add students first.
           </div>
         ) : (
-          <div className="space-y-2.5">
+          <div className="space-y-2">
             {students.map((stu, idx) => {
               const current = draftRecords[stu.id];
               return (
                 <div
                   key={stu.id}
-                  className="rounded-3xl bg-white p-3.5"
+                  className="rounded-2xl bg-white p-3"
                 >
-                  <div className="mb-2.5 flex items-baseline justify-between gap-2">
-                    <p className="text-base font-semibold text-[#002B5B]">
-                      <span className="mr-1.5 text-xs font-medium text-[#002B5B]/50">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <p className="min-w-0 truncate text-sm font-semibold text-[#002B5B]">
+                      <span className="mr-1.5 text-xs font-medium tabular-nums text-[#002B5B]/50">
                         {idx + 1}.
                       </span>
                       {stu.name}
                     </p>
                     {stu.rollNo && (
-                      <span className="text-xs font-medium text-[#002B5B]/60">
+                      <span className="shrink-0 text-xs font-medium tabular-nums text-[#002B5B]/60">
                         {stu.rollNo}
                       </span>
                     )}
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-3 gap-1.5">
                     <button
                       type="button"
                       onClick={() => setStudentStatus(stu.id, 'present')}
-                      className={`rounded-full py-2.5 text-sm font-medium transition-colors ${
+                      className={`rounded-full py-2 text-xs font-medium transition-colors ${
                         current === 'present'
                           ? 'bg-emerald-500 text-white'
                           : 'bg-[#F0F4FF] text-[#002B5B]'
@@ -261,7 +271,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                     <button
                       type="button"
                       onClick={() => setStudentStatus(stu.id, 'absent')}
-                      className={`rounded-full py-2.5 text-sm font-medium transition-colors ${
+                      className={`rounded-full py-2 text-xs font-medium transition-colors ${
                         current === 'absent'
                           ? 'bg-red-500 text-white'
                           : 'bg-[#F0F4FF] text-[#002B5B]'
@@ -272,7 +282,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                     <button
                       type="button"
                       onClick={() => setStudentStatus(stu.id, 'leave')}
-                      className={`rounded-full py-2.5 text-sm font-medium transition-colors ${
+                      className={`rounded-full py-2 text-xs font-medium transition-colors ${
                         current === 'leave'
                           ? 'bg-amber-500 text-white'
                           : 'bg-[#F0F4FF] text-[#002B5B]'
@@ -290,21 +300,21 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
 
       {/* Bottom Action Bar */}
       {students.length > 0 && (
-        <div className="safe-bottom fixed inset-x-0 bottom-0 z-20 bg-[#F8FAFF]/95 px-4 pt-3 backdrop-blur-sm">
-          <div className="mx-auto flex max-w-[580px] flex-col gap-2">
+        <div className="safe-bottom fixed inset-x-0 bottom-0 z-20 bg-[#F8FAFF]/95 px-4 pt-2.5 backdrop-blur-sm">
+          <div className="mx-auto flex max-w-[540px] flex-col gap-1.5">
             <button
               type="button"
               disabled={exporting}
               onClick={handleSaveAndExport}
-              className="w-full rounded-full bg-[#6495ED] py-4 text-lg font-medium text-[#002B5B] active:opacity-80 disabled:opacity-50"
+              className="w-full rounded-full bg-[#6495ED] py-3 text-base font-medium text-[#002B5B] active:opacity-80 disabled:opacity-50"
             >
               {exporting ? 'Generating Excel...' : 'Generate Excel Sheet'}
             </button>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-1.5">
               <button
                 type="button"
                 onClick={handleSaveOnly}
-                className="rounded-full bg-[#6495ED]/20 py-2.5 text-xs font-semibold text-[#002B5B] active:opacity-75"
+                className="rounded-full bg-[#6495ED]/20 py-2 text-xs font-semibold text-[#002B5B] active:opacity-75"
               >
                 Save Only
               </button>
@@ -312,7 +322,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                 type="button"
                 disabled={exporting}
                 onClick={handleExportRegister}
-                className="rounded-full bg-[#6495ED]/20 py-2.5 text-xs font-semibold text-[#002B5B] active:opacity-75 disabled:opacity-50"
+                className="rounded-full bg-[#6495ED]/20 py-2 text-xs font-semibold text-[#002B5B] active:opacity-75 disabled:opacity-50"
               >
                 Full Subject Register
               </button>

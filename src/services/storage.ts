@@ -18,26 +18,36 @@ export function createId(prefix = 'id'): string {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
 }
 
+function safeArray<T>(val: unknown): T[] {
+  if (!Array.isArray(val)) return [];
+  return val.filter((item): item is T => Boolean(item && typeof item === 'object'));
+}
+
 export function loadAppData(): AppData {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return EMPTY_DATA;
     const parsed = JSON.parse(raw) as Partial<AppData>;
     return {
-      programs: Array.isArray(parsed.programs) ? parsed.programs : [],
-      semesters: Array.isArray(parsed.semesters) ? parsed.semesters : [],
-      teachers: Array.isArray(parsed.teachers) ? parsed.teachers : [],
-      subjects: Array.isArray(parsed.subjects) ? parsed.subjects : [],
-      students: Array.isArray(parsed.students) ? parsed.students : [],
-      sessions: Array.isArray(parsed.sessions) ? parsed.sessions : [],
+      programs: safeArray(parsed.programs),
+      semesters: safeArray(parsed.semesters),
+      teachers: safeArray(parsed.teachers),
+      subjects: safeArray(parsed.subjects),
+      students: safeArray(parsed.students),
+      sessions: safeArray(parsed.sessions),
     };
   } catch {
     return EMPTY_DATA;
   }
 }
 
-export function saveAppData(data: AppData): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+export function saveAppData(data: AppData): boolean {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function getTodayISO(): string {

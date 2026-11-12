@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { AppData } from '../types/attendance';
 import { createId } from '../services/storage';
 import { PillButton } from '../components/PillButton';
@@ -45,6 +45,13 @@ export const SetupView: React.FC<SetupViewProps> = ({
   const [bulkMode, setBulkMode] = useState(false);
   const [bulkText, setBulkText] = useState('');
   const [feedback, setFeedback] = useState<string | null>(null);
+  const timerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) window.clearTimeout(timerRef.current);
+    };
+  }, []);
 
   const activeProgramId =
     data.programs.some((p) => p.id === selectedProgramId)
@@ -410,7 +417,7 @@ export const SetupView: React.FC<SetupViewProps> = ({
           subtitle="Configure Students, Teachers & Subjects"
           onBack={onBackHome}
         />
-        <main className="mx-auto flex max-w-[600px] flex-col items-center gap-5 py-6">
+        <main className="mx-auto flex max-w-[560px] flex-col items-center gap-3.5 py-4">
           <PillButton label="Students" onClick={() => setTab('students')} />
           <PillButton label="Teachers" onClick={() => setTab('teachers')} />
           <PillButton label="Subjects" onClick={() => setTab('subjects')} />

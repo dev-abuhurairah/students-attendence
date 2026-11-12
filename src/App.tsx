@@ -100,43 +100,43 @@ export const App: React.FC = () => {
     return (
       <div className="safe-bottom min-h-screen bg-[#F8FAFF]">
         <Header title="Overview" onBack={() => setScreen({ name: 'home' })} />
-        <main className="mx-auto w-[90%] max-w-[540px] space-y-3 py-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-3xl bg-white p-5 text-center">
-              <p className="text-3xl font-semibold text-[#002B5B]">
+        <main className="mx-auto w-[90%] max-w-[540px] space-y-2.5 py-3">
+          <div className="grid grid-cols-2 gap-2.5">
+            <div className="rounded-2xl bg-white p-4 text-center">
+              <p className="text-2xl font-semibold tabular-nums text-[#002B5B]">
                 {data.programs.length}
               </p>
-              <p className="mt-1 text-xs font-medium text-[#002B5B]/65">
+              <p className="mt-0.5 text-xs font-medium text-[#002B5B]/65">
                 Programs
               </p>
             </div>
-            <div className="rounded-3xl bg-white p-5 text-center">
-              <p className="text-3xl font-semibold text-[#002B5B]">
+            <div className="rounded-2xl bg-white p-4 text-center">
+              <p className="text-2xl font-semibold tabular-nums text-[#002B5B]">
                 {data.semesters.length}
               </p>
-              <p className="mt-1 text-xs font-medium text-[#002B5B]/65">
+              <p className="mt-0.5 text-xs font-medium text-[#002B5B]/65">
                 Semesters
               </p>
             </div>
-            <div className="rounded-3xl bg-white p-5 text-center">
-              <p className="text-3xl font-semibold text-[#002B5B]">
+            <div className="rounded-2xl bg-white p-4 text-center">
+              <p className="text-2xl font-semibold tabular-nums text-[#002B5B]">
                 {data.subjects.length}
               </p>
-              <p className="mt-1 text-xs font-medium text-[#002B5B]/65">
+              <p className="mt-0.5 text-xs font-medium text-[#002B5B]/65">
                 Subjects
               </p>
             </div>
-            <div className="rounded-3xl bg-white p-5 text-center">
-              <p className="text-3xl font-semibold text-[#002B5B]">
+            <div className="rounded-2xl bg-white p-4 text-center">
+              <p className="text-2xl font-semibold tabular-nums text-[#002B5B]">
                 {data.students.length}
               </p>
-              <p className="mt-1 text-xs font-medium text-[#002B5B]/65">
+              <p className="mt-0.5 text-xs font-medium text-[#002B5B]/65">
                 Students
               </p>
             </div>
           </div>
 
-          <div className="rounded-3xl bg-white p-5 text-sm leading-relaxed text-[#002B5B]/80">
+          <div className="rounded-2xl bg-white p-4 text-sm leading-relaxed text-[#002B5B]/80">
             <p className="mb-2 font-semibold text-[#002B5B]">How to use:</p>
             <p>
               1. Open <strong>Setup</strong> to add Programs (e.g. BBA),
@@ -175,9 +175,9 @@ export const App: React.FC = () => {
           subtitle="Select Semester"
           onBack={() => setScreen({ name: 'home' })}
         />
-        <main className="mx-auto flex max-w-[600px] flex-col items-center gap-5 py-6">
+        <main className="mx-auto flex max-w-[560px] flex-col items-center gap-3.5 py-4">
           {semesters.length === 0 ? (
-            <div className="w-[90%] rounded-3xl bg-white p-6 text-center text-sm text-[#002B5B]/70">
+            <div className="w-[88%] rounded-2xl bg-white p-5 text-center text-sm text-[#002B5B]/70">
               No semesters added for {program.name} yet. Go to Setup &gt;
               Subjects to add semesters.
             </div>
@@ -228,9 +228,9 @@ export const App: React.FC = () => {
             setScreen({ name: 'program', programId: program.id })
           }
         />
-        <main className="mx-auto flex max-w-[600px] flex-col items-center gap-5 py-6">
+        <main className="mx-auto flex max-w-[560px] flex-col items-center gap-3.5 py-4">
           {subjects.length === 0 ? (
-            <div className="w-[90%] rounded-3xl bg-white p-6 text-center text-sm text-[#002B5B]/70">
+            <div className="w-[88%] rounded-2xl bg-white p-5 text-center text-sm text-[#002B5B]/70">
               No subjects added for {semester.name} yet. Go to Setup &gt;
               Subjects to add subjects and teachers.
             </div>
@@ -248,7 +248,7 @@ export const App: React.FC = () => {
                     })
                   }
                 />
-                <p className="mt-1.5 text-center text-sm font-medium text-[#002B5B]/75">
+                <p className="mt-1 text-center text-xs font-medium text-[#002B5B]/75">
                   Teacher: {sub.teacherName}
                 </p>
               </div>
@@ -298,7 +298,7 @@ export const App: React.FC = () => {
     <div className="safe-bottom min-h-screen bg-[#F8FAFF]">
       <Header title="Student Attendance" />
 
-      <main className="mx-auto flex max-w-[600px] flex-col items-center gap-5 py-6">
+      <main className="mx-auto flex max-w-[560px] flex-col items-center gap-3.5 py-4">
         <PillButton
           label="Setup"
           onClick={() => setScreen({ name: 'setup' })}
