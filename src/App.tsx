@@ -102,7 +102,7 @@ export const App: React.FC = () => {
 
   if (screen.name === 'overview') {
     return (
-      <div className="safe-bottom min-h-screen bg-[#F8FAFF]">
+      <div className="safe-bottom animate-screen-enter min-h-screen bg-[#F8FAFF]">
         <Header title="Overview" onBack={() => setScreen({ name: 'home' })} />
         <main className="mx-auto w-[90%] max-w-[540px] space-y-2.5 py-3">
           <div className="grid grid-cols-2 gap-2.5">
@@ -161,7 +161,7 @@ export const App: React.FC = () => {
 
   if (screen.name === 'programs') {
     return (
-      <div className="safe-bottom min-h-screen bg-[#F8FAFF]">
+      <div className="safe-bottom animate-screen-enter min-h-screen bg-[#F8FAFF]">
         <Header
           title="Programs"
           subtitle="Select a Program"
@@ -193,7 +193,7 @@ export const App: React.FC = () => {
     const program = data.programs.find((p) => p.id === screen.programId);
     if (!program) {
       return (
-        <div className="safe-bottom min-h-screen bg-[#F8FAFF]">
+        <div className="safe-bottom animate-screen-enter min-h-screen bg-[#F8FAFF]">
           <Header
             title="Program"
             onBack={() => setScreen({ name: 'programs' })}
@@ -206,7 +206,7 @@ export const App: React.FC = () => {
     );
 
     return (
-      <div className="safe-bottom min-h-screen bg-[#F8FAFF]">
+      <div className="safe-bottom animate-screen-enter min-h-screen bg-[#F8FAFF]">
         <Header
           title={program.name}
           subtitle="Select Semester"
@@ -243,7 +243,7 @@ export const App: React.FC = () => {
     const semester = data.semesters.find((s) => s.id === screen.semesterId);
     if (!program || !semester) {
       return (
-        <div className="safe-bottom min-h-screen bg-[#F8FAFF]">
+        <div className="safe-bottom animate-screen-enter min-h-screen bg-[#F8FAFF]">
           <Header
             title="Semester"
             onBack={() => setScreen({ name: 'home' })}
@@ -257,7 +257,7 @@ export const App: React.FC = () => {
     );
 
     return (
-      <div className="safe-bottom min-h-screen bg-[#F8FAFF]">
+      <div className="safe-bottom animate-screen-enter min-h-screen bg-[#F8FAFF]">
         <Header
           title={`${program.name} — ${semester.name}`}
           subtitle="Select Subject"
@@ -303,7 +303,7 @@ export const App: React.FC = () => {
 
     if (!program || !semester || !subject) {
       return (
-        <div className="safe-bottom min-h-screen bg-[#F8FAFF]">
+        <div className="safe-bottom animate-screen-enter min-h-screen bg-[#F8FAFF]">
           <Header
             title="Attendance"
             onBack={() => setScreen({ name: 'home' })}
@@ -332,7 +332,7 @@ export const App: React.FC = () => {
 
   // Home Screen: clean fixed buttons without crowding
   return (
-    <div className="safe-bottom min-h-screen bg-[#F8FAFF]">
+    <div className="safe-bottom animate-screen-enter min-h-screen bg-[#F8FAFF]">
       <Header title="Student Attendance" />
 
       <main className="mx-auto flex max-w-[560px] flex-col items-center gap-3.5 py-4">

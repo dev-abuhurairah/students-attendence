@@ -26,7 +26,7 @@ export const PillButton: React.FC<PillButtonProps> = ({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className="mx-auto flex h-[80px] w-[88%] max-w-[460px] cursor-pointer items-center justify-center rounded-full bg-[#6495ED] px-6 text-center text-[22px] font-medium leading-snug tracking-tight text-[#002B5B] transition-opacity duration-150 active:opacity-80 disabled:cursor-not-allowed disabled:opacity-50 sm:text-[24px]"
+      className="animate-card-pop mx-auto flex h-[80px] w-[88%] max-w-[460px] cursor-pointer items-center justify-center rounded-full bg-[#6495ED] px-6 text-center text-[22px] font-medium leading-snug tracking-tight text-[#002B5B] transition-all duration-150 ease-out active:scale-[0.97] active:opacity-85 disabled:cursor-not-allowed disabled:opacity-50 sm:text-[24px]"
     >
       <span className="line-clamp-2 w-full text-center">{label}</span>
     </button>

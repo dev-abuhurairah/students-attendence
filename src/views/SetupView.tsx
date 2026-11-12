@@ -411,7 +411,7 @@ export const SetupView: React.FC<SetupViewProps> = ({
 
   if (tab === 'menu') {
     return (
-      <div className="safe-bottom min-h-screen bg-[#F8FAFF]">
+      <div className="safe-bottom animate-screen-enter min-h-screen bg-[#F8FAFF]">
         <Header
           title="Setup"
           subtitle="Configure Students, Teachers & Subjects"
@@ -437,7 +437,7 @@ export const SetupView: React.FC<SetupViewProps> = ({
     .sort((a, b) => a.rollNo.localeCompare(b.rollNo, undefined, { numeric: true }));
 
   return (
-    <div className="safe-bottom min-h-screen bg-[#F8FAFF]">
+    <div className="safe-bottom animate-screen-enter min-h-screen bg-[#F8FAFF]">
       <Header
         title={
           tab === 'teachers'

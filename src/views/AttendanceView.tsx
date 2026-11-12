@@ -13,6 +13,7 @@ import {
   exportSubjectRegisterExcel,
 } from '../services/excel';
 import { exportAttendanceImage } from '../services/image';
+import { exportAttendancePdf } from '../services/pdf';
 import { Header } from '../components/Header';
 
 interface AttendanceViewProps {
@@ -160,6 +161,26 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
     }
   };
 
+  const handleSaveAndExportPdf = async () => {
+    const session = buildSession();
+    onSaveSession(session);
+    setExporting(true);
+    try {
+      const msg = await exportAttendancePdf({
+        program,
+        semester,
+        subject,
+        students,
+        session,
+      });
+      notify(msg);
+    } catch (err) {
+      notify(err instanceof Error ? err.message : 'Failed to generate PDF');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const handleExportRegister = async () => {
     const session = buildSession();
     onSaveSession(session);
@@ -185,7 +206,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
   };
 
   return (
-    <div className="safe-bottom min-h-screen bg-[#F8FAFF] pb-32">
+    <div className="safe-bottom animate-screen-enter min-h-screen bg-[#F8FAFF] pb-32">
       <Header
         title={subject.name}
         subtitle={`${program.name} • ${semester.name} • ${subject.teacherName}`}
@@ -243,7 +264,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
         </div>
 
         {statusMessage && (
-          <div className="rounded-full bg-[#002B5B] px-4 py-2 text-center text-xs font-medium text-white">
+          <div className="animate-toast rounded-full bg-[#002B5B] px-4 py-2 text-center text-xs font-medium text-white">
             {statusMessage}
           </div>
         )}
@@ -281,7 +302,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                     <button
                       type="button"
                       onClick={() => setStudentStatus(stu.id, 'present')}
-                      className={`rounded-full py-2 text-xs font-medium transition-colors ${
+                      className={`rounded-full py-2 text-xs font-medium transition-all duration-150 active:scale-95 ${
                         current === 'present'
                           ? 'bg-emerald-500 text-white'
                           : 'bg-[#F0F4FF] text-[#002B5B]'
@@ -292,7 +313,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                     <button
                       type="button"
                       onClick={() => setStudentStatus(stu.id, 'absent')}
-                      className={`rounded-full py-2 text-xs font-medium transition-colors ${
+                      className={`rounded-full py-2 text-xs font-medium transition-all duration-150 active:scale-95 ${
                         current === 'absent'
                           ? 'bg-red-500 text-white'
                           : 'bg-[#F0F4FF] text-[#002B5B]'
@@ -303,7 +324,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                     <button
                       type="button"
                       onClick={() => setStudentStatus(stu.id, 'leave')}
-                      className={`rounded-full py-2 text-xs font-medium transition-colors ${
+                      className={`rounded-full py-2 text-xs font-medium transition-all duration-150 active:scale-95 ${
                         current === 'leave'
                           ? 'bg-amber-500 text-white'
                           : 'bg-[#F0F4FF] text-[#002B5B]'
@@ -323,22 +344,30 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
       {students.length > 0 && (
         <div className="safe-bottom fixed inset-x-0 bottom-0 z-20 bg-[#F8FAFF]/95 px-4 pt-2.5 backdrop-blur-sm">
           <div className="mx-auto flex max-w-[540px] flex-col gap-1.5">
-            <div className="grid grid-cols-2 gap-1.5">
+            <div className="grid grid-cols-3 gap-1.5">
               <button
                 type="button"
                 disabled={exporting}
                 onClick={handleSaveAndExport}
-                className="w-full rounded-full bg-[#6495ED] py-3 text-sm font-semibold text-[#002B5B] active:opacity-80 disabled:opacity-50"
+                className="w-full rounded-full bg-[#6495ED] py-3 text-xs font-semibold text-[#002B5B] transition-all duration-150 active:scale-95 active:opacity-80 disabled:opacity-50 sm:text-sm"
               >
-                {exporting ? 'Generating...' : 'Generate Excel'}
+                {exporting ? 'Wait...' : 'Excel'}
+              </button>
+              <button
+                type="button"
+                disabled={exporting}
+                onClick={handleSaveAndExportPdf}
+                className="w-full rounded-full bg-[#6495ED] py-3 text-xs font-semibold text-[#002B5B] transition-all duration-150 active:scale-95 active:opacity-80 disabled:opacity-50 sm:text-sm"
+              >
+                {exporting ? 'Wait...' : 'PDF'}
               </button>
               <button
                 type="button"
                 disabled={exporting}
                 onClick={handleSaveAndExportImage}
-                className="w-full rounded-full bg-[#6495ED] py-3 text-sm font-semibold text-[#002B5B] active:opacity-80 disabled:opacity-50"
+                className="w-full rounded-full bg-[#6495ED] py-3 text-xs font-semibold text-[#002B5B] transition-all duration-150 active:scale-95 active:opacity-80 disabled:opacity-50 sm:text-sm"
               >
-                {exporting ? 'Generating...' : 'Generate Image'}
+                {exporting ? 'Wait...' : 'Image'}
               </button>
             </div>
             <div className="grid grid-cols-2 gap-1.5">

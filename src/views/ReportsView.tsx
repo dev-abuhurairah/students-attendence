@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { AppData, AttendanceSession } from '../types/attendance';
 import { exportDailyAttendanceExcel } from '../services/excel';
 import { exportAttendanceImage } from '../services/image';
+import { exportAttendancePdf } from '../services/pdf';
 import { Header } from '../components/Header';
 
 interface ReportsViewProps {
@@ -18,7 +19,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ data, onBack }) => {
 
   const handleExportSession = async (
     session: AttendanceSession,
-    format: 'excel' | 'image'
+    format: 'excel' | 'pdf' | 'image'
   ) => {
     const program = data.programs.find((p) => p.id === session.programId);
     const semester = data.semesters.find((s) => s.id === session.semesterId);
@@ -38,7 +39,9 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ data, onBack }) => {
       const msg =
         format === 'excel'
           ? await exportDailyAttendanceExcel(payload)
-          : await exportAttendanceImage(payload);
+          : format === 'pdf'
+            ? await exportAttendancePdf(payload)
+            : await exportAttendanceImage(payload);
       setMessage(msg);
       setTimeout(() => setMessage(null), 3000);
     } catch (err) {
@@ -49,15 +52,15 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ data, onBack }) => {
   };
 
   return (
-    <div className="safe-bottom min-h-screen bg-[#F8FAFF]">
+    <div className="safe-bottom animate-screen-enter min-h-screen bg-[#F8FAFF]">
       <Header
-        title="Excel Reports"
-        subtitle="Saved Attendance Sheets"
+        title="Reports"
+        subtitle="Export Excel, PDF & Image"
         onBack={onBack}
       />
 
       {message && (
-        <div className="mx-auto mb-3 w-[90%] max-w-[540px] rounded-full bg-[#002B5B] px-4 py-2 text-center text-xs font-medium text-white">
+        <div className="animate-toast mx-auto mb-3 w-[90%] max-w-[540px] rounded-full bg-[#002B5B] px-4 py-2 text-center text-xs font-medium text-white">
           {message}
         </div>
       )}
@@ -103,14 +106,21 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ data, onBack }) => {
                   <button
                     type="button"
                     onClick={() => handleExportSession(sess, 'excel')}
-                    className="rounded-full bg-[#6495ED] px-3.5 py-2 text-xs font-semibold text-[#002B5B] active:opacity-80"
+                    className="rounded-full bg-[#6495ED] px-3 py-2 text-xs font-semibold text-[#002B5B] transition-all duration-150 active:scale-95"
                   >
                     Excel
                   </button>
                   <button
                     type="button"
+                    onClick={() => handleExportSession(sess, 'pdf')}
+                    className="rounded-full bg-[#002B5B] px-3 py-2 text-xs font-semibold text-white transition-all duration-150 active:scale-95"
+                  >
+                    PDF
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => handleExportSession(sess, 'image')}
-                    className="rounded-full bg-[#6495ED]/25 px-3.5 py-2 text-xs font-semibold text-[#002B5B] active:opacity-80"
+                    className="rounded-full bg-[#6495ED]/25 px-3 py-2 text-xs font-semibold text-[#002B5B] transition-all duration-150 active:scale-95"
                   >
                     Image
                   </button>

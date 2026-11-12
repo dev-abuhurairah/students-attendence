@@ -14,34 +14,14 @@ function sanitizeFileName(name: string): string {
   return name.replace(/[^a-zA-Z0-9_-]+/g, '_').replace(/^_+|_+$/g, '');
 }
 
-function getStatusInfo(status?: AttendanceStatus): {
+function getSimpleStatus(status?: AttendanceStatus): {
   label: string;
-  bg: string;
-  fg: string;
+  color: string;
 } {
-  if (status === 'present') {
-    return { label: 'Present', bg: '#D1FAE5', fg: '#065F46' };
-  }
-  if (status === 'absent') {
-    return { label: 'Absent', bg: '#FEE2E2', fg: '#991B1B' };
-  }
-  if (status === 'leave') {
-    return { label: 'Leave', bg: '#FEF3C7', fg: '#92400E' };
-  }
-  return { label: 'Not Marked', bg: '#F1F5F9', fg: '#475569' };
-}
-
-function drawRoundedRect(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  r: number
-) {
-  ctx.beginPath();
-  ctx.roundRect(x, y, w, h, r);
-  ctx.closePath();
+  if (status === 'present') return { label: 'Present', color: '#059669' };
+  if (status === 'absent') return { label: 'Absent', color: '#DC2626' };
+  if (status === 'leave') return { label: 'Leave', color: '#D97706' };
+  return { label: '-', color: '#64748B' };
 }
 
 export interface AttendanceImageParams {
@@ -73,28 +53,15 @@ export function renderAttendanceCanvas({
     else if (st === 'leave') leaveCount++;
   });
 
-  const pct =
-    sortedStudents.length > 0
-      ? Math.round((presentCount / sortedStudents.length) * 100)
-      : 0;
-
-  const width = 960;
-  const padding = 40;
-  const headerHeight = 190;
-  const summaryHeight = 64;
-  const tableHeaderHeight = 46;
-  const rowHeight = 48;
-  const footerHeight = 50;
+  const width = 820;
+  const pad = 36;
+  const headerH = 126;
+  const tableHeaderH = 40;
+  const rowH = 40;
+  const footerH = 34;
 
   const totalHeight =
-    padding * 2 +
-    headerHeight +
-    20 +
-    summaryHeight +
-    20 +
-    tableHeaderHeight +
-    sortedStudents.length * rowHeight +
-    footerHeight;
+    pad + headerH + tableHeaderH + sortedStudents.length * rowH + footerH + pad;
 
   const scale = 2;
   const canvas = document.createElement('canvas');
@@ -110,135 +77,91 @@ export function renderAttendanceCanvas({
   const fontBase =
     '"Plus Jakarta Sans", "Google Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 
-  // Background
-  ctx.fillStyle = '#F8FAFF';
+  // Pure white background for maximum readability
+  ctx.fillStyle = '#FFFFFF';
   ctx.fillRect(0, 0, width, totalHeight);
 
-  // Header Card
-  const cardW = width - padding * 2;
-  ctx.fillStyle = '#6495ED';
-  drawRoundedRect(ctx, padding, padding, cardW, headerHeight, 28);
-  ctx.fill();
-
+  // Simple Clean Header
   ctx.fillStyle = '#002B5B';
-  ctx.font = `700 28px ${fontBase}`;
   ctx.textBaseline = 'middle';
-  ctx.fillText('STUDENT ATTENDANCE SHEET', padding + 32, padding + 44);
-
-  ctx.font = `600 18px ${fontBase}`;
-  ctx.fillText(
-    `${program.name}  •  ${semester.name}`,
-    padding + 32,
-    padding + 86
-  );
-
-  ctx.font = `500 17px ${fontBase}`;
-  ctx.fillText(`Subject: ${subject.name}`, padding + 32, padding + 120);
-  ctx.fillText(`Teacher: ${subject.teacherName}`, padding + 32, padding + 150);
+  ctx.font = `700 24px ${fontBase}`;
+  ctx.fillText('Attendance Sheet', pad, pad + 16);
 
   ctx.textAlign = 'right';
-  ctx.font = `600 17px ${fontBase}`;
-  ctx.fillText(`Date: ${session.date}`, padding + cardW - 32, padding + 44);
+  ctx.font = `600 16px ${fontBase}`;
+  ctx.fillText(session.date, width - pad, pad + 16);
+  ctx.textAlign = 'left';
+
+  ctx.fillStyle = '#334155';
+  ctx.font = `500 15px ${fontBase}`;
   ctx.fillText(
-    `Total: ${sortedStudents.length}`,
-    padding + cardW - 32,
-    padding + 150
+    `${program.name} (${semester.name})  •  ${subject.name}  •  ${subject.teacherName}`,
+    pad,
+    pad + 48
   );
-  ctx.textAlign = 'left';
 
-  // Summary Bar
-  const summaryY = padding + headerHeight + 20;
-  ctx.fillStyle = '#FFFFFF';
-  drawRoundedRect(ctx, padding, summaryY, cardW, summaryHeight, 20);
-  ctx.fill();
-
-  const summaryItems = [
-    { label: `Present: ${presentCount}`, bg: '#D1FAE5', fg: '#065F46' },
-    { label: `Absent: ${absentCount}`, bg: '#FEE2E2', fg: '#991B1B' },
-    { label: `Leave: ${leaveCount}`, bg: '#FEF3C7', fg: '#92400E' },
-    { label: `Attendance: ${pct}%`, bg: '#E0EAFF', fg: '#002B5B' },
-  ];
-
-  const pillGap = 14;
-  const pillW = (cardW - 32 - pillGap * 3) / 4;
-  summaryItems.forEach((item, idx) => {
-    const px = padding + 16 + idx * (pillW + pillGap);
-    const py = summaryY + 12;
-    ctx.fillStyle = item.bg;
-    drawRoundedRect(ctx, px, py, pillW, 40, 20);
-    ctx.fill();
-
-    ctx.fillStyle = item.fg;
-    ctx.font = `600 15px ${fontBase}`;
-    ctx.textAlign = 'center';
-    ctx.fillText(item.label, px + pillW / 2, py + 20);
-  });
-  ctx.textAlign = 'left';
-
-  // Table Container
-  const tableY = summaryY + summaryHeight + 20;
-  const tableH = tableHeaderHeight + sortedStudents.length * rowHeight;
-  ctx.fillStyle = '#FFFFFF';
-  drawRoundedRect(ctx, padding, tableY, cardW, tableH, 20);
-  ctx.fill();
-
-  // Table Header
+  // Simple 1-line summary
   ctx.fillStyle = '#002B5B';
-  drawRoundedRect(ctx, padding, tableY, cardW, tableHeaderHeight, 20);
-  ctx.fill();
-  ctx.fillRect(padding, tableY + 20, cardW, tableHeaderHeight - 20);
-
-  ctx.fillStyle = '#FFFFFF';
   ctx.font = `600 15px ${fontBase}`;
-  ctx.fillText('Sr.', padding + 24, tableY + 24);
-  ctx.fillText('Roll No', padding + 95, tableY + 24);
-  ctx.fillText('Student Name', padding + 240, tableY + 24);
-  ctx.textAlign = 'center';
-  ctx.fillText('Status', padding + cardW - 95, tableY + 24);
-  ctx.textAlign = 'left';
-
-  // Table Rows
-  sortedStudents.forEach((stu, idx) => {
-    const ry = tableY + tableHeaderHeight + idx * rowHeight;
-    if (idx % 2 === 1) {
-      ctx.fillStyle = '#F8FAFF';
-      ctx.fillRect(padding, ry, cardW, rowHeight);
-    }
-
-    ctx.fillStyle = '#002B5B';
-    ctx.font = `500 15px ${fontBase}`;
-    ctx.fillText(String(idx + 1), padding + 24, ry + rowHeight / 2);
-    ctx.fillText(stu.rollNo || '-', padding + 95, ry + rowHeight / 2);
-    ctx.font = `600 15px ${fontBase}`;
-    ctx.fillText(stu.name.slice(0, 38), padding + 240, ry + rowHeight / 2);
-
-    const st = getStatusInfo(session.records[stu.id]);
-    const badgeW = 120;
-    const badgeH = 30;
-    const badgeX = padding + cardW - 95 - badgeW / 2;
-    const badgeY = ry + (rowHeight - badgeH) / 2;
-
-    ctx.fillStyle = st.bg;
-    drawRoundedRect(ctx, badgeX, badgeY, badgeW, badgeH, 15);
-    ctx.fill();
-
-    ctx.fillStyle = st.fg;
-    ctx.font = `600 13px ${fontBase}`;
-    ctx.textAlign = 'center';
-    ctx.fillText(st.label, badgeX + badgeW / 2, badgeY + badgeH / 2);
-    ctx.textAlign = 'left';
-  });
-
-  // Footer
-  ctx.fillStyle = '#64748B';
-  ctx.font = `500 13px ${fontBase}`;
-  ctx.textAlign = 'center';
   ctx.fillText(
-    `Generated by Student Attendance App`,
-    width / 2,
-    totalHeight - padding / 2 - 4
+    `Total: ${sortedStudents.length}    Present: ${presentCount}    Absent: ${absentCount}    Leave: ${leaveCount}`,
+    pad,
+    pad + 82
   );
+
+  // Divider line
+  const tableY = pad + headerH - 12;
+  ctx.strokeStyle = '#CBD5E1';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(pad, tableY);
+  ctx.lineTo(width - pad, tableY);
+  ctx.stroke();
+
+  // Simple Table Header
+  ctx.fillStyle = '#002B5B';
+  ctx.font = `700 14px ${fontBase}`;
+  ctx.fillText('#', pad + 8, tableY + 22);
+  ctx.fillText('Roll No', pad + 64, tableY + 22);
+  ctx.fillText('Student Name', pad + 190, tableY + 22);
+  ctx.textAlign = 'right';
+  ctx.fillText('Status', width - pad - 8, tableY + 22);
   ctx.textAlign = 'left';
+
+  ctx.strokeStyle = '#94A3B8';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(pad, tableY + tableHeaderH);
+  ctx.lineTo(width - pad, tableY + tableHeaderH);
+  ctx.stroke();
+
+  // Simple Rows
+  sortedStudents.forEach((stu, idx) => {
+    const ry = tableY + tableHeaderH + idx * rowH;
+
+    ctx.fillStyle = '#475569';
+    ctx.font = `500 14px ${fontBase}`;
+    ctx.fillText(String(idx + 1), pad + 8, ry + rowH / 2);
+    ctx.fillText(stu.rollNo || '-', pad + 64, ry + rowH / 2);
+
+    ctx.fillStyle = '#0F172A';
+    ctx.font = `500 15px ${fontBase}`;
+    ctx.fillText(stu.name.slice(0, 40), pad + 190, ry + rowH / 2);
+
+    const st = getSimpleStatus(session.records[stu.id]);
+    ctx.fillStyle = st.color;
+    ctx.font = `700 14px ${fontBase}`;
+    ctx.textAlign = 'right';
+    ctx.fillText(st.label, width - pad - 8, ry + rowH / 2);
+    ctx.textAlign = 'left';
+
+    ctx.strokeStyle = '#E2E8F0';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(pad, ry + rowH);
+    ctx.lineTo(width - pad, ry + rowH);
+    ctx.stroke();
+  });
 
   return canvas;
 }
@@ -283,7 +206,6 @@ export async function exportAttendanceImage(
     return `Saved & opened share sheet for ${fileName}`;
   }
 
-  // Web download fallback
   const link = document.createElement('a');
   link.href = dataUrl;
   link.download = fileName;

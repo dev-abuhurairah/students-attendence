@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import * as XLSX from 'xlsx';
+import XLSX from 'xlsx-js-style';
 import {
   exportDailyAttendanceExcel,
   exportSubjectRegisterExcel,
@@ -11,11 +11,13 @@ vi.mock('@capacitor/core', () => ({
   },
 }));
 
-vi.mock('xlsx', async () => {
-  const actual = await vi.importActual<typeof import('xlsx')>('xlsx');
+vi.mock('xlsx-js-style', async () => {
+  const actual = await vi.importActual<{ default: typeof XLSX }>('xlsx-js-style');
   return {
-    ...actual,
-    writeFile: vi.fn(),
+    default: {
+      ...actual.default,
+      writeFile: vi.fn(),
+    },
   };
 });
 
