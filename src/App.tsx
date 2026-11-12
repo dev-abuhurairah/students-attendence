@@ -12,6 +12,7 @@ import { ReportsView } from './views/ReportsView';
 type Screen =
   | { name: 'home' }
   | { name: 'setup' }
+  | { name: 'programs' }
   | { name: 'reports' }
   | { name: 'overview' }
   | { name: 'program'; programId: string }
@@ -62,8 +63,11 @@ export const App: React.FC = () => {
         if (curr.name === 'semester') {
           return { name: 'program', programId: curr.programId };
         }
+        if (curr.name === 'program') {
+          return { name: 'programs' };
+        }
         if (
-          curr.name === 'program' ||
+          curr.name === 'programs' ||
           curr.name === 'setup' ||
           curr.name === 'reports' ||
           curr.name === 'overview'
@@ -155,12 +159,45 @@ export const App: React.FC = () => {
     );
   }
 
+  if (screen.name === 'programs') {
+    return (
+      <div className="safe-bottom min-h-screen bg-[#F8FAFF]">
+        <Header
+          title="Programs"
+          subtitle="Select a Program"
+          onBack={() => setScreen({ name: 'home' })}
+        />
+        <main className="mx-auto flex max-w-[560px] flex-col items-center gap-3.5 py-4">
+          {data.programs.length === 0 ? (
+            <div className="w-[88%] rounded-2xl bg-white p-5 text-center text-sm text-[#002B5B]/70">
+              No programs added yet. Go to Setup &gt; Subjects to add your first
+              program (e.g. BBA).
+            </div>
+          ) : (
+            data.programs.map((prog) => (
+              <PillButton
+                key={prog.id}
+                label={prog.name}
+                onClick={() =>
+                  setScreen({ name: 'program', programId: prog.id })
+                }
+              />
+            ))
+          )}
+        </main>
+      </div>
+    );
+  }
+
   if (screen.name === 'program') {
     const program = data.programs.find((p) => p.id === screen.programId);
     if (!program) {
       return (
         <div className="safe-bottom min-h-screen bg-[#F8FAFF]">
-          <Header title="Program" onBack={() => setScreen({ name: 'home' })} />
+          <Header
+            title="Program"
+            onBack={() => setScreen({ name: 'programs' })}
+          />
         </div>
       );
     }
@@ -173,7 +210,7 @@ export const App: React.FC = () => {
         <Header
           title={program.name}
           subtitle="Select Semester"
-          onBack={() => setScreen({ name: 'home' })}
+          onBack={() => setScreen({ name: 'programs' })}
         />
         <main className="mx-auto flex max-w-[560px] flex-col items-center gap-3.5 py-4">
           {semesters.length === 0 ? (
@@ -293,7 +330,7 @@ export const App: React.FC = () => {
     );
   }
 
-  // Home Screen: 3 initial buttons + dynamic Program buttons
+  // Home Screen: clean fixed buttons without crowding
   return (
     <div className="safe-bottom min-h-screen bg-[#F8FAFF]">
       <Header title="Student Attendance" />
@@ -304,6 +341,10 @@ export const App: React.FC = () => {
           onClick={() => setScreen({ name: 'setup' })}
         />
         <PillButton
+          label="Programs"
+          onClick={() => setScreen({ name: 'programs' })}
+        />
+        <PillButton
           label="Reports"
           onClick={() => setScreen({ name: 'reports' })}
         />
@@ -311,16 +352,6 @@ export const App: React.FC = () => {
           label="Overview"
           onClick={() => setScreen({ name: 'overview' })}
         />
-
-        {data.programs.map((prog) => (
-          <PillButton
-            key={prog.id}
-            label={prog.name}
-            onClick={() =>
-              setScreen({ name: 'program', programId: prog.id })
-            }
-          />
-        ))}
       </main>
     </div>
   );
