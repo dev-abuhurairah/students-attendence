@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { AppData, AttendanceSession } from '../types/attendance';
 import { exportDailyAttendanceExcel } from '../services/excel';
+import { exportAttendanceImage } from '../services/image';
 import { Header } from '../components/Header';
 
 interface ReportsViewProps {
@@ -15,7 +16,10 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ data, onBack }) => {
     (a, b) => b.date.localeCompare(a.date) || b.updatedAt - a.updatedAt
   );
 
-  const handleExportSession = async (session: AttendanceSession) => {
+  const handleExportSession = async (
+    session: AttendanceSession,
+    format: 'excel' | 'image'
+  ) => {
     const program = data.programs.find((p) => p.id === session.programId);
     const semester = data.semesters.find((s) => s.id === session.semesterId);
     const subject = data.subjects.find((s) => s.id === session.subjectId);
@@ -30,18 +34,16 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ data, onBack }) => {
     );
 
     try {
-      const msg = await exportDailyAttendanceExcel({
-        program,
-        semester,
-        subject,
-        students,
-        session,
-      });
+      const payload = { program, semester, subject, students, session };
+      const msg =
+        format === 'excel'
+          ? await exportDailyAttendanceExcel(payload)
+          : await exportAttendanceImage(payload);
       setMessage(msg);
       setTimeout(() => setMessage(null), 3000);
     } catch (err) {
       setMessage(
-        err instanceof Error ? err.message : 'Could not export Excel sheet'
+        err instanceof Error ? err.message : `Could not export ${format}`
       );
     }
   };
@@ -97,13 +99,22 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ data, onBack }) => {
                   </p>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => handleExportSession(sess)}
-                  className="shrink-0 rounded-full bg-[#6495ED] px-4 py-2 text-xs font-semibold text-[#002B5B] active:opacity-80"
-                >
-                  Excel
-                </button>
+                <div className="flex shrink-0 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handleExportSession(sess, 'excel')}
+                    className="rounded-full bg-[#6495ED] px-3.5 py-2 text-xs font-semibold text-[#002B5B] active:opacity-80"
+                  >
+                    Excel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleExportSession(sess, 'image')}
+                    className="rounded-full bg-[#6495ED]/25 px-3.5 py-2 text-xs font-semibold text-[#002B5B] active:opacity-80"
+                  >
+                    Image
+                  </button>
+                </div>
               </div>
             );
           })

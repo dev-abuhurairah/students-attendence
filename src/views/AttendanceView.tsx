@@ -12,6 +12,7 @@ import {
   exportDailyAttendanceExcel,
   exportSubjectRegisterExcel,
 } from '../services/excel';
+import { exportAttendanceImage } from '../services/image';
 import { Header } from '../components/Header';
 
 interface AttendanceViewProps {
@@ -134,6 +135,26 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
       notify(msg);
     } catch (err) {
       notify(err instanceof Error ? err.message : 'Failed to generate Excel');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleSaveAndExportImage = async () => {
+    const session = buildSession();
+    onSaveSession(session);
+    setExporting(true);
+    try {
+      const msg = await exportAttendanceImage({
+        program,
+        semester,
+        subject,
+        students,
+        session,
+      });
+      notify(msg);
+    } catch (err) {
+      notify(err instanceof Error ? err.message : 'Failed to generate Image');
     } finally {
       setExporting(false);
     }
@@ -302,14 +323,24 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
       {students.length > 0 && (
         <div className="safe-bottom fixed inset-x-0 bottom-0 z-20 bg-[#F8FAFF]/95 px-4 pt-2.5 backdrop-blur-sm">
           <div className="mx-auto flex max-w-[540px] flex-col gap-1.5">
-            <button
-              type="button"
-              disabled={exporting}
-              onClick={handleSaveAndExport}
-              className="w-full rounded-full bg-[#6495ED] py-3 text-base font-medium text-[#002B5B] active:opacity-80 disabled:opacity-50"
-            >
-              {exporting ? 'Generating Excel...' : 'Generate Excel Sheet'}
-            </button>
+            <div className="grid grid-cols-2 gap-1.5">
+              <button
+                type="button"
+                disabled={exporting}
+                onClick={handleSaveAndExport}
+                className="w-full rounded-full bg-[#6495ED] py-3 text-sm font-semibold text-[#002B5B] active:opacity-80 disabled:opacity-50"
+              >
+                {exporting ? 'Generating...' : 'Generate Excel'}
+              </button>
+              <button
+                type="button"
+                disabled={exporting}
+                onClick={handleSaveAndExportImage}
+                className="w-full rounded-full bg-[#6495ED] py-3 text-sm font-semibold text-[#002B5B] active:opacity-80 disabled:opacity-50"
+              >
+                {exporting ? 'Generating...' : 'Generate Image'}
+              </button>
+            </div>
             <div className="grid grid-cols-2 gap-1.5">
               <button
                 type="button"
