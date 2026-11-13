@@ -15,7 +15,6 @@ import {
   exportSemesterAttendancePdf,
   exportSubjectAttendancePdf,
 } from '../services/pdf';
-import { calculateAttendancePercentage } from '../services/storage';
 import { Header } from '../components/Header';
 
 interface ReportsViewProps {
@@ -30,7 +29,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ data, onBack }) => {
   const [message, setMessage] = useState<{ text: string; isError?: boolean } | null>(
     null
   );
-  const [busy, setBusy] = useState(false);
+  const [busyFormat, setBusyFormat] = useState<string | null>(null);
 
   // Selections for Subject Report
   const [subjectProgramId, setSubjectProgramId] = useState<string>(
@@ -157,7 +156,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ data, onBack }) => {
       return;
     }
 
-    setBusy(true);
+    setBusyFormat(format);
     try {
       let msg = '';
       if (format === 'excel') {
@@ -193,7 +192,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ data, onBack }) => {
         true
       );
     } finally {
-      setBusy(false);
+      setBusyFormat(null);
     }
   };
 
@@ -213,7 +212,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ data, onBack }) => {
       return;
     }
 
-    setBusy(true);
+    setBusyFormat(format);
     try {
       let msg = '';
       if (format === 'excel') {
@@ -249,7 +248,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ data, onBack }) => {
         true
       );
     } finally {
-      setBusy(false);
+      setBusyFormat(null);
     }
   };
 
@@ -273,7 +272,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ data, onBack }) => {
       (stu) => stu.programId === program.id && stu.semesterId === semester.id
     );
 
-    setBusy(true);
+    setBusyFormat(`${session.id}_${format}`);
     try {
       const payload = { program, semester, subject, students, session };
       let msg = '';
@@ -291,7 +290,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ data, onBack }) => {
         true
       );
     } finally {
-      setBusy(false);
+      setBusyFormat(null);
     }
   };
 
@@ -299,14 +298,14 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ data, onBack }) => {
     <div className="safe-bottom animate-screen-enter min-h-screen bg-[#F8FAFF] pb-24">
       <Header
         title="Attendance Reports"
-        subtitle="Subject, Semester & Daily Reports"
+        subtitle="Generate Excel, PDF & Image"
         onBack={onBack}
       />
 
       {/* Toast Notification */}
       {message && (
         <div
-          className={`animate-toast mx-auto mb-3 w-[90%] max-w-[540px] rounded-xl px-4 py-2.5 text-center text-xs font-semibold shadow-md ${
+          className={`animate-toast mx-auto mb-3 w-[92%] max-w-[500px] rounded-xl px-4 py-2.5 text-center text-xs font-semibold shadow-md ${
             message.isError
               ? 'bg-red-600 text-white'
               : 'bg-[#002B5B] text-white'
@@ -317,13 +316,13 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ data, onBack }) => {
       )}
 
       {/* Tabs */}
-      <div className="mx-auto mb-4 flex w-[90%] max-w-[540px] rounded-full bg-white p-1 shadow-sm border border-[#E0EAFF]">
+      <div className="mx-auto mb-4 flex w-[92%] max-w-[500px] rounded-full bg-white p-1 shadow-xs border border-[#E0EAFF]">
         <button
           type="button"
           onClick={() => setActiveTab('subject')}
           className={`flex-1 rounded-full py-2 text-xs font-semibold transition-all duration-150 ${
             activeTab === 'subject'
-              ? 'bg-[#002B5B] text-white shadow-sm'
+              ? 'bg-[#002B5B] text-white shadow-xs'
               : 'text-[#002B5B]/75 hover:bg-[#F0F4FF]'
           }`}
         >
@@ -334,7 +333,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ data, onBack }) => {
           onClick={() => setActiveTab('semester')}
           className={`flex-1 rounded-full py-2 text-xs font-semibold transition-all duration-150 ${
             activeTab === 'semester'
-              ? 'bg-[#002B5B] text-white shadow-sm'
+              ? 'bg-[#002B5B] text-white shadow-xs'
               : 'text-[#002B5B]/75 hover:bg-[#F0F4FF]'
           }`}
         >
@@ -345,7 +344,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ data, onBack }) => {
           onClick={() => setActiveTab('daily')}
           className={`flex-1 rounded-full py-2 text-xs font-semibold transition-all duration-150 ${
             activeTab === 'daily'
-              ? 'bg-[#002B5B] text-white shadow-sm'
+              ? 'bg-[#002B5B] text-white shadow-xs'
               : 'text-[#002B5B]/75 hover:bg-[#F0F4FF]'
           }`}
         >
@@ -353,77 +352,78 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ data, onBack }) => {
         </button>
       </div>
 
-      <main className="mx-auto w-[90%] max-w-[540px] space-y-4">
+      <main className="mx-auto w-[92%] max-w-[500px] space-y-4">
         {/* ======================================================== */}
-        {/* TAB 1: ONE SUBJECT FULL ATTENDANCE REPORT                 */}
+        {/* TAB 1: ONE SUBJECT REPORT GENERATOR                      */}
         {/* ======================================================== */}
         {activeTab === 'subject' && (
           <div className="space-y-4">
-            {/* Filter Card */}
-            <div className="rounded-2xl bg-white p-4 shadow-sm border border-[#E0EAFF] space-y-3">
+            {/* Filter Selection Card */}
+            <div className="rounded-2xl bg-white p-4 shadow-xs border border-[#E0EAFF] space-y-3">
               <p className="text-xs font-bold uppercase tracking-wider text-[#002B5B]">
-                Select Subject for Report
+                Select Subject
               </p>
 
-              {/* Red instruction text if setup is missing */}
               {data.programs.length === 0 ? (
                 <p className="text-xs font-semibold text-red-600">
                   No programs added yet. Please add a program first in Setup.
                 </p>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <div>
-                    <label className="text-[11px] font-semibold text-[#002B5B]/65">
-                      Program
-                    </label>
-                    <select
-                      value={subjectProgramId}
-                      onChange={(e) => {
-                        setSubjectProgramId(e.target.value);
-                        const sems = data.semesters.filter(
-                          (s) => s.programId === e.target.value
-                        );
-                        setSubjectSemesterId(sems[0]?.id ?? '');
-                        const subs = data.subjects.filter(
-                          (sub) =>
-                            sub.programId === e.target.value &&
-                            sub.semesterId === (sems[0]?.id ?? '')
-                        );
-                        setSelectedSubjectId(subs[0]?.id ?? '');
-                      }}
-                      className="mt-1 w-full rounded-xl bg-[#F8FAFF] p-2 text-xs font-semibold text-[#002B5B] border border-[#CBD5E1] outline-none"
-                    >
-                      {data.programs.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                <div className="space-y-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[11px] font-semibold text-[#002B5B]/65">
+                        Program
+                      </label>
+                      <select
+                        value={subjectProgramId}
+                        onChange={(e) => {
+                          setSubjectProgramId(e.target.value);
+                          const sems = data.semesters.filter(
+                            (s) => s.programId === e.target.value
+                          );
+                          setSubjectSemesterId(sems[0]?.id ?? '');
+                          const subs = data.subjects.filter(
+                            (sub) =>
+                              sub.programId === e.target.value &&
+                              sub.semesterId === (sems[0]?.id ?? '')
+                          );
+                          setSelectedSubjectId(subs[0]?.id ?? '');
+                        }}
+                        className="mt-1 w-full rounded-xl bg-[#F8FAFF] p-2.5 text-xs font-semibold text-[#002B5B] border border-[#CBD5E1] outline-none"
+                      >
+                        {data.programs.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-                  <div>
-                    <label className="text-[11px] font-semibold text-[#002B5B]/65">
-                      Semester
-                    </label>
-                    <select
-                      value={subjectSemesterId}
-                      onChange={(e) => {
-                        setSubjectSemesterId(e.target.value);
-                        const subs = data.subjects.filter(
-                          (sub) =>
-                            sub.programId === subjectProgramId &&
-                            sub.semesterId === e.target.value
-                        );
-                        setSelectedSubjectId(subs[0]?.id ?? '');
-                      }}
-                      className="mt-1 w-full rounded-xl bg-[#F8FAFF] p-2 text-xs font-semibold text-[#002B5B] border border-[#CBD5E1] outline-none"
-                    >
-                      {subjectProgramSemesters.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.name}
-                        </option>
-                      ))}
-                    </select>
+                    <div>
+                      <label className="text-[11px] font-semibold text-[#002B5B]/65">
+                        Semester
+                      </label>
+                      <select
+                        value={subjectSemesterId}
+                        onChange={(e) => {
+                          setSubjectSemesterId(e.target.value);
+                          const subs = data.subjects.filter(
+                            (sub) =>
+                              sub.programId === subjectProgramId &&
+                              sub.semesterId === e.target.value
+                          );
+                          setSelectedSubjectId(subs[0]?.id ?? '');
+                        }}
+                        className="mt-1 w-full rounded-xl bg-[#F8FAFF] p-2.5 text-xs font-semibold text-[#002B5B] border border-[#CBD5E1] outline-none"
+                      >
+                        {subjectProgramSemesters.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
 
                   <div>
@@ -433,7 +433,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ data, onBack }) => {
                     <select
                       value={selectedSubjectId}
                       onChange={(e) => setSelectedSubjectId(e.target.value)}
-                      className="mt-1 w-full rounded-xl bg-[#F8FAFF] p-2 text-xs font-semibold text-[#002B5B] border border-[#CBD5E1] outline-none"
+                      className="mt-1 w-full rounded-xl bg-[#F8FAFF] p-2.5 text-xs font-semibold text-[#002B5B] border border-[#CBD5E1] outline-none"
                     >
                       {semesterSubjects.map((sub) => (
                         <option key={sub.id} value={sub.id}>
@@ -445,7 +445,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ data, onBack }) => {
                 </div>
               )}
 
-              {/* Instructions in red text */}
+              {/* Red instructions for empty states */}
               {data.programs.length > 0 && subjectProgramSemesters.length === 0 && (
                 <p className="text-xs font-semibold text-red-600">
                   No semesters added for this program. Please add semesters first in Setup.
@@ -458,165 +458,104 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ data, onBack }) => {
               )}
             </div>
 
-            {/* If Subject is chosen, check if attendance exists */}
+            {/* Subject Report Generator Box (No in-app student table) */}
             {activeSubject && (
               <>
                 {subjectSessions.length === 0 ? (
-                  <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-center shadow-sm">
+                  <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-center shadow-xs">
                     <p className="text-sm font-semibold text-red-600">
                       No attendance found for this subject. Please take attendance first.
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {/* Header info & Stats Card */}
-                    <div className="rounded-2xl bg-white p-4 shadow-sm border border-[#E0EAFF]">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-base font-bold text-[#002B5B]">
-                            {activeSubject.name}
-                          </h3>
-                          <p className="text-xs text-[#002B5B]/70">
-                            Teacher: {activeSubject.teacherName || 'Not Assigned'}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <span className="rounded-full bg-[#E0EAFF] px-2.5 py-1 text-xs font-bold text-[#002B5B]">
-                            {subjectSessions.length} Classes Held
-                          </span>
-                        </div>
-                      </div>
+                  <div className="rounded-2xl bg-white p-4 shadow-xs border border-[#E0EAFF] space-y-4">
+                    {/* Summary Card */}
+                    <div className="border-b border-[#F0F4FF] pb-3.5">
+                      <p className="text-[11px] font-semibold uppercase tracking-wider text-[#002B5B]/60">
+                        Subject Attendance Report
+                      </p>
+                      <h3 className="text-lg font-bold text-[#002B5B] mt-0.5">
+                        {activeSubject.name}
+                      </h3>
+                      <p className="text-xs text-[#002B5B]/70 mt-0.5">
+                        {activeSubjectProgram?.name} • {activeSubjectSemester?.name} • Teacher: {activeSubject.teacherName || 'Not Assigned'}
+                      </p>
 
-                      {/* Export & Save to Mobile Button Row */}
-                      <div className="mt-4 pt-3 border-t border-[#F0F4FF] space-y-2">
-                        <p className="text-[11px] font-bold uppercase tracking-wider text-red-600">
-                          Export &amp; Save Report to Mobile Storage / Gallery
-                        </p>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleExportSubject('excel')}
-                            disabled={busy}
-                            className="rounded-xl bg-[#6495ED] py-2 text-xs font-bold text-[#002B5B] shadow-sm transition-all active:scale-95 hover:bg-[#5383db]"
-                          >
-                            Save Excel (.xlsx)
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleExportSubject('pdf')}
-                            disabled={busy}
-                            className="rounded-xl bg-[#002B5B] py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95 hover:bg-[#001d3d]"
-                          >
-                            Save PDF
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleExportSubject('png')}
-                            disabled={busy}
-                            className="rounded-xl bg-[#6495ED]/20 py-2 text-xs font-bold text-[#002B5B] shadow-sm transition-all active:scale-95 hover:bg-[#6495ED]/30"
-                          >
-                            Save PNG Image
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleExportSubject('jpeg')}
-                            disabled={busy}
-                            className="rounded-xl bg-[#002B5B]/10 py-2 text-xs font-bold text-[#002B5B] shadow-sm transition-all active:scale-95 hover:bg-[#002B5B]/15"
-                          >
-                            Save JPG Image
-                          </button>
-                        </div>
+                      <div className="mt-3 flex gap-2">
+                        <span className="rounded-xl bg-[#E0EAFF] px-3 py-1.5 text-xs font-bold text-[#002B5B]">
+                          {subjectSessions.length} Classes Held
+                        </span>
+                        <span className="rounded-xl bg-[#F0F4FF] px-3 py-1.5 text-xs font-bold text-[#002B5B]">
+                          {subjectStudents.length} Students
+                        </span>
                       </div>
                     </div>
 
-                    {/* Table View of Subject Attendance */}
-                    <div className="rounded-2xl bg-white p-3 shadow-sm border border-[#E0EAFF] overflow-x-auto">
-                      <table className="w-full text-left text-xs">
-                        <thead>
-                          <tr className="border-b border-[#E0EAFF] text-[#002B5B]">
-                            <th className="py-2 px-1 text-center font-bold">#</th>
-                            <th className="py-2 px-2 font-bold">Roll No</th>
-                            <th className="py-2 px-2 font-bold min-w-[120px]">
-                              Student Name
-                            </th>
-                            {subjectSessions.map((s) => (
-                              <th
-                                key={s.id}
-                                className="py-2 px-1.5 text-center font-semibold text-[11px]"
-                              >
-                                {s.date.slice(5)}
-                              </th>
-                            ))}
-                            <th className="py-2 px-1 text-center font-bold text-emerald-700">
-                              P
-                            </th>
-                            <th className="py-2 px-1 text-center font-bold text-red-700">
-                              A
-                            </th>
-                            <th className="py-2 px-1.5 text-center font-bold">
-                              Total
-                            </th>
-                            <th className="py-2 px-2 text-center font-bold text-[#002B5B]">
-                              Attendance %
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[#F0F4FF]">
-                          {subjectStudents.map((stu, idx) => {
-                            let p = 0;
-                            let a = 0;
-                            const datesMarks = subjectSessions.map((sess) => {
-                              const st = sess.records[stu.id];
-                              if (st === 'present') p++;
-                              else a++;
-                              return st === 'present' ? 'P' : 'A';
-                            });
+                    {/* Direct Export Buttons (Save to Mobile) */}
+                    <div className="space-y-2">
+                      <p className="text-xs font-bold text-red-600 uppercase tracking-wide">
+                        Generate &amp; Save to Mobile:
+                      </p>
 
-                            const pct = calculateAttendancePercentage(
-                              p,
-                              subjectSessions.length
-                            );
+                      <button
+                        type="button"
+                        onClick={() => handleExportSubject('excel')}
+                        disabled={Boolean(busyFormat)}
+                        className="w-full flex items-center justify-between rounded-xl bg-[#6495ED] px-4 py-3 text-xs font-bold text-[#002B5B] shadow-xs transition-all active:scale-98 hover:bg-[#5383db]"
+                      >
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z" />
+                          </svg>
+                          <span>Generate Excel (.xlsx)</span>
+                        </div>
+                        <span className="text-[11px] font-semibold bg-white/40 px-2 py-0.5 rounded-md">Save to Mobile</span>
+                      </button>
 
-                            return (
-                              <tr key={stu.id} className="hover:bg-[#F8FAFF]">
-                                <td className="py-2 px-1 text-center text-[#002B5B]/60 font-medium">
-                                  {idx + 1}
-                                </td>
-                                <td className="py-2 px-2 font-semibold tabular-nums text-[#002B5B]">
-                                  {stu.rollNo || '-'}
-                                </td>
-                                <td className="py-2 px-2 font-semibold text-[#002B5B]">
-                                  {stu.name}
-                                </td>
-                                {datesMarks.map((mark, mIdx) => (
-                                  <td
-                                    key={mIdx}
-                                    className={`py-2 px-1.5 text-center font-bold ${
-                                      mark === 'P'
-                                        ? 'text-emerald-600'
-                                        : 'text-red-600'
-                                    }`}
-                                  >
-                                    {mark}
-                                  </td>
-                                ))}
-                                <td className="py-2 px-1 text-center font-bold text-emerald-700">
-                                  {p}
-                                </td>
-                                <td className="py-2 px-1 text-center font-bold text-red-700">
-                                  {a}
-                                </td>
-                                <td className="py-2 px-1.5 text-center font-semibold text-[#002B5B]">
-                                  {subjectSessions.length}
-                                </td>
-                                <td className="py-2 px-2 text-center font-bold text-[#002B5B]">
-                                  {pct}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
+                      <button
+                        type="button"
+                        onClick={() => handleExportSubject('pdf')}
+                        disabled={Boolean(busyFormat)}
+                        className="w-full flex items-center justify-between rounded-xl bg-[#002B5B] px-4 py-3 text-xs font-bold text-white shadow-xs transition-all active:scale-98 hover:bg-[#001d3d]"
+                      >
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v4zm4-3H19v1h1.5V11H19v2h-1.5V7h3v1.5z" />
+                          </svg>
+                          <span>Generate PDF Document</span>
+                        </div>
+                        <span className="text-[11px] font-semibold bg-white/20 px-2 py-0.5 rounded-md">Save to Mobile</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleExportSubject('png')}
+                        disabled={Boolean(busyFormat)}
+                        className="w-full flex items-center justify-between rounded-xl bg-[#6495ED]/20 px-4 py-3 text-xs font-bold text-[#002B5B] shadow-xs transition-all active:scale-98 hover:bg-[#6495ED]/30"
+                      >
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
+                          </svg>
+                          <span>Generate PNG Image</span>
+                        </div>
+                        <span className="text-[11px] font-semibold bg-white/60 px-2 py-0.5 rounded-md">Save to Mobile</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleExportSubject('jpeg')}
+                        disabled={Boolean(busyFormat)}
+                        className="w-full flex items-center justify-between rounded-xl bg-[#002B5B]/10 px-4 py-3 text-xs font-bold text-[#002B5B] shadow-xs transition-all active:scale-98 hover:bg-[#002B5B]/15"
+                      >
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
+                          </svg>
+                          <span>Generate JPG Image</span>
+                        </div>
+                        <span className="text-[11px] font-semibold bg-white/60 px-2 py-0.5 rounded-md">Save to Mobile</span>
+                      </button>
                     </div>
                   </div>
                 )}
@@ -626,14 +565,14 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ data, onBack }) => {
         )}
 
         {/* ======================================================== */}
-        {/* TAB 2: ONE SEMESTER ALL SUBJECTS ATTENDANCE REPORT       */}
+        {/* TAB 2: SEMESTER ALL-SUBJECTS REPORT GENERATOR             */}
         {/* ======================================================== */}
         {activeTab === 'semester' && (
           <div className="space-y-4">
-            {/* Filter Card */}
-            <div className="rounded-2xl bg-white p-4 shadow-sm border border-[#E0EAFF] space-y-3">
+            {/* Filter Selection Card */}
+            <div className="rounded-2xl bg-white p-4 shadow-xs border border-[#E0EAFF] space-y-3">
               <p className="text-xs font-bold uppercase tracking-wider text-[#002B5B]">
-                Select Semester for All-Subjects Report
+                Select Semester
               </p>
 
               {data.programs.length === 0 ? (
@@ -655,7 +594,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ data, onBack }) => {
                         );
                         setSemReportSemesterId(sems[0]?.id ?? '');
                       }}
-                      className="mt-1 w-full rounded-xl bg-[#F8FAFF] p-2 text-xs font-semibold text-[#002B5B] border border-[#CBD5E1] outline-none"
+                      className="mt-1 w-full rounded-xl bg-[#F8FAFF] p-2.5 text-xs font-semibold text-[#002B5B] border border-[#CBD5E1] outline-none"
                     >
                       {data.programs.map((p) => (
                         <option key={p.id} value={p.id}>
@@ -672,7 +611,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ data, onBack }) => {
                     <select
                       value={semReportSemesterId}
                       onChange={(e) => setSemReportSemesterId(e.target.value)}
-                      className="mt-1 w-full rounded-xl bg-[#F8FAFF] p-2 text-xs font-semibold text-[#002B5B] border border-[#CBD5E1] outline-none"
+                      className="mt-1 w-full rounded-xl bg-[#F8FAFF] p-2.5 text-xs font-semibold text-[#002B5B] border border-[#CBD5E1] outline-none"
                     >
                       {semReportSemesters.map((s) => (
                         <option key={s.id} value={s.id}>
@@ -691,173 +630,113 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ data, onBack }) => {
               )}
             </div>
 
-            {/* If semester is selected */}
+            {/* Semester Generator Box (No in-app student table) */}
             {activeSemReportSemester && (
               <>
                 {semReportSubjects.length === 0 ? (
-                  <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-center shadow-sm">
+                  <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-center shadow-xs">
                     <p className="text-sm font-semibold text-red-600">
                       No subjects added for {activeSemReportSemester.name}. Please add subjects first.
                     </p>
                   </div>
                 ) : semReportSessions.length === 0 ? (
-                  <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-center shadow-sm">
+                  <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-center shadow-xs">
                     <p className="text-sm font-semibold text-red-600">
                       No attendance found for this semester. Please take attendance first.
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {/* Header info & Stats */}
-                    <div className="rounded-2xl bg-white p-4 shadow-sm border border-[#E0EAFF]">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-base font-bold text-[#002B5B]">
-                            {activeSemReportSemester.name} — All Subjects
-                          </h3>
-                          <p className="text-xs text-[#002B5B]/70">
-                            {semReportSubjects.length} Subjects •{' '}
-                            {semReportStudents.length} Students
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <span className="rounded-full bg-[#E0EAFF] px-2.5 py-1 text-xs font-bold text-[#002B5B]">
-                            {semReportSessions.length} Total Sessions
-                          </span>
-                        </div>
-                      </div>
+                  <div className="rounded-2xl bg-white p-4 shadow-xs border border-[#E0EAFF] space-y-4">
+                    {/* Summary Card */}
+                    <div className="border-b border-[#F0F4FF] pb-3.5">
+                      <p className="text-[11px] font-semibold uppercase tracking-wider text-[#002B5B]/60">
+                        Semester All-Subjects Report
+                      </p>
+                      <h3 className="text-lg font-bold text-[#002B5B] mt-0.5">
+                        {activeSemReportProgram?.name} — {activeSemReportSemester.name}
+                      </h3>
+                      <p className="text-xs text-[#002B5B]/70 mt-0.5">
+                        Includes all {semReportSubjects.length} subjects and {semReportStudents.length} students
+                      </p>
 
-                      {/* Export & Save to Mobile Button Row */}
-                      <div className="mt-4 pt-3 border-t border-[#F0F4FF] space-y-2">
-                        <p className="text-[11px] font-bold uppercase tracking-wider text-red-600">
-                          Export &amp; Save Semester Report to Mobile Storage / Gallery
-                        </p>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleExportSemester('excel')}
-                            disabled={busy}
-                            className="rounded-xl bg-[#6495ED] py-2 text-xs font-bold text-[#002B5B] shadow-sm transition-all active:scale-95 hover:bg-[#5383db]"
-                          >
-                            Save Excel (.xlsx)
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleExportSemester('pdf')}
-                            disabled={busy}
-                            className="rounded-xl bg-[#002B5B] py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95 hover:bg-[#001d3d]"
-                          >
-                            Save PDF
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleExportSemester('png')}
-                            disabled={busy}
-                            className="rounded-xl bg-[#6495ED]/20 py-2 text-xs font-bold text-[#002B5B] shadow-sm transition-all active:scale-95 hover:bg-[#6495ED]/30"
-                          >
-                            Save PNG Image
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleExportSemester('jpeg')}
-                            disabled={busy}
-                            className="rounded-xl bg-[#002B5B]/10 py-2 text-xs font-bold text-[#002B5B] shadow-sm transition-all active:scale-95 hover:bg-[#002B5B]/15"
-                          >
-                            Save JPG Image
-                          </button>
-                        </div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <span className="rounded-xl bg-[#E0EAFF] px-3 py-1.5 text-xs font-bold text-[#002B5B]">
+                          {semReportSubjects.length} Subjects
+                        </span>
+                        <span className="rounded-xl bg-[#F0F4FF] px-3 py-1.5 text-xs font-bold text-[#002B5B]">
+                          {semReportSessions.length} Total Sessions
+                        </span>
+                        <span className="rounded-xl bg-[#F0F4FF] px-3 py-1.5 text-xs font-bold text-[#002B5B]">
+                          {semReportStudents.length} Students
+                        </span>
                       </div>
                     </div>
 
-                    {/* All Subjects Table View */}
-                    <div className="rounded-2xl bg-white p-3 shadow-sm border border-[#E0EAFF] overflow-x-auto">
-                      <table className="w-full text-left text-xs">
-                        <thead>
-                          <tr className="border-b border-[#E0EAFF] text-[#002B5B]">
-                            <th className="py-2 px-1 text-center font-bold">#</th>
-                            <th className="py-2 px-2 font-bold">Roll No</th>
-                            <th className="py-2 px-2 font-bold min-w-[120px]">
-                              Student Name
-                            </th>
-                            {semReportSubjects.map((sub) => (
-                              <th
-                                key={sub.id}
-                                className="py-2 px-2 text-center font-bold min-w-[90px]"
-                              >
-                                {sub.name}
-                                <div className="text-[10px] font-normal text-[#002B5B]/60">
-                                  P / Total (%)
-                                </div>
-                              </th>
-                            ))}
-                            <th className="py-2 px-2 text-center font-bold min-w-[90px] bg-[#F0F4FF] rounded-r-lg">
-                              Overall
-                              <div className="text-[10px] font-normal text-[#002B5B]/60">
-                                Total P / Tot (%)
-                              </div>
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[#F0F4FF]">
-                          {semReportStudents.map((stu, idx) => {
-                            let overallP = 0;
-                            let overallTotal = 0;
+                    {/* Direct Export Buttons (Save to Mobile) */}
+                    <div className="space-y-2">
+                      <p className="text-xs font-bold text-red-600 uppercase tracking-wide">
+                        Generate &amp; Save to Mobile:
+                      </p>
 
-                            const subData = semReportSubjects.map((sub) => {
-                              const sSessions = semReportSessions.filter(
-                                (s) => s.subjectId === sub.id
-                              );
-                              let p = 0;
-                              sSessions.forEach((sess) => {
-                                if (sess.records[stu.id] === 'present') p++;
-                              });
-                              const tot = sSessions.length;
-                              overallP += p;
-                              overallTotal += tot;
-                              const pct = calculateAttendancePercentage(p, tot);
-                              return { p, tot, pct };
-                            });
+                      <button
+                        type="button"
+                        onClick={() => handleExportSemester('excel')}
+                        disabled={Boolean(busyFormat)}
+                        className="w-full flex items-center justify-between rounded-xl bg-[#6495ED] px-4 py-3 text-xs font-bold text-[#002B5B] shadow-xs transition-all active:scale-98 hover:bg-[#5383db]"
+                      >
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z" />
+                          </svg>
+                          <span>Generate All-Subjects Excel (.xlsx)</span>
+                        </div>
+                        <span className="text-[11px] font-semibold bg-white/40 px-2 py-0.5 rounded-md">Save to Mobile</span>
+                      </button>
 
-                            const overallPct = calculateAttendancePercentage(
-                              overallP,
-                              overallTotal
-                            );
+                      <button
+                        type="button"
+                        onClick={() => handleExportSemester('pdf')}
+                        disabled={Boolean(busyFormat)}
+                        className="w-full flex items-center justify-between rounded-xl bg-[#002B5B] px-4 py-3 text-xs font-bold text-white shadow-xs transition-all active:scale-98 hover:bg-[#001d3d]"
+                      >
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v4zm4-3H19v1h1.5V11H19v2h-1.5V7h3v1.5z" />
+                          </svg>
+                          <span>Generate All-Subjects PDF</span>
+                        </div>
+                        <span className="text-[11px] font-semibold bg-white/20 px-2 py-0.5 rounded-md">Save to Mobile</span>
+                      </button>
 
-                            return (
-                              <tr key={stu.id} className="hover:bg-[#F8FAFF]">
-                                <td className="py-2 px-1 text-center text-[#002B5B]/60 font-medium">
-                                  {idx + 1}
-                                </td>
-                                <td className="py-2 px-2 font-semibold tabular-nums text-[#002B5B]">
-                                  {stu.rollNo || '-'}
-                                </td>
-                                <td className="py-2 px-2 font-semibold text-[#002B5B]">
-                                  {stu.name}
-                                </td>
-                                {subData.map((sd, sIdx) => (
-                                  <td
-                                    key={sIdx}
-                                    className="py-2 px-2 text-center tabular-nums"
-                                  >
-                                    <span className="font-semibold text-[#002B5B]">
-                                      {sd.p}/{sd.tot}
-                                    </span>
-                                    <span className="ml-1 text-[11px] font-bold text-[#6495ED]">
-                                      ({sd.pct})
-                                    </span>
-                                  </td>
-                                ))}
-                                <td className="py-2 px-2 text-center tabular-nums bg-[#F0F4FF]/50 font-bold text-[#002B5B]">
-                                  {overallP}/{overallTotal}{' '}
-                                  <span className="text-emerald-700">
-                                    ({overallPct})
-                                  </span>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
+                      <button
+                        type="button"
+                        onClick={() => handleExportSemester('png')}
+                        disabled={Boolean(busyFormat)}
+                        className="w-full flex items-center justify-between rounded-xl bg-[#6495ED]/20 px-4 py-3 text-xs font-bold text-[#002B5B] shadow-xs transition-all active:scale-98 hover:bg-[#6495ED]/30"
+                      >
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
+                          </svg>
+                          <span>Generate PNG Image</span>
+                        </div>
+                        <span className="text-[11px] font-semibold bg-white/60 px-2 py-0.5 rounded-md">Save to Mobile</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleExportSemester('jpeg')}
+                        disabled={Boolean(busyFormat)}
+                        className="w-full flex items-center justify-between rounded-xl bg-[#002B5B]/10 px-4 py-3 text-xs font-bold text-[#002B5B] shadow-xs transition-all active:scale-98 hover:bg-[#002B5B]/15"
+                      >
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
+                          </svg>
+                          <span>Generate JPG Image</span>
+                        </div>
+                        <span className="text-[11px] font-semibold bg-white/60 px-2 py-0.5 rounded-md">Save to Mobile</span>
+                      </button>
                     </div>
                   </div>
                 )}
@@ -872,7 +751,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ data, onBack }) => {
         {activeTab === 'daily' && (
           <div className="space-y-3">
             {data.sessions.length === 0 ? (
-              <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-center shadow-sm">
+              <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-center shadow-xs">
                 <p className="text-sm font-semibold text-red-600">
                   No attendance found yet. Please take attendance first.
                 </p>
@@ -896,7 +775,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ data, onBack }) => {
                   return (
                     <div
                       key={sess.id}
-                      className="rounded-2xl bg-white p-3.5 shadow-sm border border-[#E0EAFF]"
+                      className="rounded-2xl bg-white p-3.5 shadow-xs border border-[#E0EAFF]"
                     >
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0 flex-1">
@@ -917,38 +796,38 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ data, onBack }) => {
                       </div>
 
                       <div className="mt-3 flex items-center gap-1.5 border-t border-[#F0F4FF] pt-2.5">
-                        <span className="text-[11px] font-bold text-red-600 mr-1">
+                        <span className="text-[11px] font-bold text-red-600 mr-1 shrink-0">
                           Save:
                         </span>
                         <button
                           type="button"
                           onClick={() => handleExportDailySession(sess, 'excel')}
-                          disabled={busy}
-                          className="rounded-full bg-[#6495ED] px-3 py-1.5 text-xs font-semibold text-[#002B5B] transition-all active:scale-95"
+                          disabled={Boolean(busyFormat)}
+                          className="rounded-full bg-[#6495ED] px-2.5 py-1 text-xs font-semibold text-[#002B5B] transition-all active:scale-95"
                         >
                           Excel
                         </button>
                         <button
                           type="button"
                           onClick={() => handleExportDailySession(sess, 'pdf')}
-                          disabled={busy}
-                          className="rounded-full bg-[#002B5B] px-3 py-1.5 text-xs font-semibold text-white transition-all active:scale-95"
+                          disabled={Boolean(busyFormat)}
+                          className="rounded-full bg-[#002B5B] px-2.5 py-1 text-xs font-semibold text-white transition-all active:scale-95"
                         >
                           PDF
                         </button>
                         <button
                           type="button"
                           onClick={() => handleExportDailySession(sess, 'png')}
-                          disabled={busy}
-                          className="rounded-full bg-[#6495ED]/20 px-3 py-1.5 text-xs font-semibold text-[#002B5B] transition-all active:scale-95"
+                          disabled={Boolean(busyFormat)}
+                          className="rounded-full bg-[#6495ED]/20 px-2.5 py-1 text-xs font-semibold text-[#002B5B] transition-all active:scale-95"
                         >
                           PNG
                         </button>
                         <button
                           type="button"
                           onClick={() => handleExportDailySession(sess, 'jpeg')}
-                          disabled={busy}
-                          className="rounded-full bg-[#002B5B]/10 px-3 py-1.5 text-xs font-semibold text-[#002B5B] transition-all active:scale-95"
+                          disabled={Boolean(busyFormat)}
+                          className="rounded-full bg-[#002B5B]/10 px-2.5 py-1 text-xs font-semibold text-[#002B5B] transition-all active:scale-95"
                         >
                           JPG
                         </button>
