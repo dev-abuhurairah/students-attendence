@@ -8,10 +8,7 @@ import type {
   Subject,
 } from '../types/attendance';
 import { getTodayISO } from '../services/storage';
-import {
-  exportDailyAttendanceExcel,
-  exportSubjectRegisterExcel,
-} from '../services/excel';
+import { exportDailyAttendanceExcel } from '../services/excel';
 import { exportAttendanceImage } from '../services/image';
 import { exportAttendancePdf } from '../services/pdf';
 import { Header } from '../components/Header';
@@ -21,7 +18,7 @@ interface AttendanceViewProps {
   program: Program;
   semester: Semester;
   subject: Subject;
-  onSaveSession: (session: AttendanceSession) => void;
+  onSaveSession: (session: AttendanceSession) => Promise<void> | void;
   onBack: () => void;
 }
 
@@ -34,10 +31,14 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
   onBack,
 }) => {
   const [date, setDate] = useState<string>(getTodayISO());
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<{
+    text: string;
+    isError?: boolean;
+  } | null>(null);
   const [exporting, setExporting] = useState(false);
   const timerRef = useRef<number | null>(null);
 
+  // Filter students for this program & semester
   const students = useMemo(
     () =>
       data.students
@@ -50,22 +51,33 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
     [data.students, program.id, semester.id]
   );
 
+  // Check if attendance already exists for this subject + date
   const sessionId = `${subject.id}__${date}`;
-  const existingSession = data.sessions.find((s) => s.id === sessionId);
+  const existingSession = useMemo(
+    () => data.sessions.find((s) => s.subjectId === subject.id && s.date === date),
+    [data.sessions, subject.id, date]
+  );
 
-  const [draftRecords, setDraftRecords] = useState<
-    Record<string, AttendanceStatus>
-  >(() => existingSession?.records ?? {});
+  const [draftRecords, setDraftRecords] = useState<Record<string, AttendanceStatus>>(
+    () => existingSession?.records ?? {}
+  );
 
+  // When date changes or data updates, open existing attendance for editing without duplicates
   useEffect(() => {
     setDraftRecords(existingSession?.records ?? {});
-  }, [sessionId, existingSession]);
+  }, [date, existingSession]);
 
   useEffect(() => {
     return () => {
       if (timerRef.current) window.clearTimeout(timerRef.current);
     };
   }, []);
+
+  const showToast = (text: string, isError = false) => {
+    if (timerRef.current) window.clearTimeout(timerRef.current);
+    setStatusMessage({ text, isError });
+    timerRef.current = window.setTimeout(() => setStatusMessage(null), 3500);
+  };
 
   const handleDateChange = (newDate: string) => {
     if (!newDate) return;
@@ -100,12 +112,6 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
     return { present, absent, leave };
   }, [draftRecords, students]);
 
-  const notify = (msg: string) => {
-    if (timerRef.current) window.clearTimeout(timerRef.current);
-    setStatusMessage(msg);
-    timerRef.current = window.setTimeout(() => setStatusMessage(null), 3000);
-  };
-
   const buildSession = (): AttendanceSession => ({
     id: sessionId,
     programId: program.id,
@@ -116,90 +122,73 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
     updatedAt: Date.now(),
   });
 
-  const handleSaveOnly = () => {
-    onSaveSession(buildSession());
-    notify('Attendance saved');
-  };
+  const handleSaveAttendance = async () => {
+    if (students.length === 0) {
+      showToast('Cannot save attendance: No students added yet.', true);
+      return;
+    }
 
-  const handleSaveAndExport = async () => {
-    const session = buildSession();
-    onSaveSession(session);
-    setExporting(true);
     try {
-      const msg = await exportDailyAttendanceExcel({
-        program,
-        semester,
-        subject,
-        students,
-        session,
-      });
-      notify(msg);
+      const session = buildSession();
+      await onSaveSession(session);
+      showToast('Attendance saved successfully.');
     } catch (err) {
-      notify(err instanceof Error ? err.message : 'Failed to generate Excel');
-    } finally {
-      setExporting(false);
+      showToast(
+        err instanceof Error
+          ? `Failed to save attendance: ${err.message}`
+          : 'Failed to save attendance. Please try again.',
+        true
+      );
     }
   };
 
-  const handleSaveAndExportImage = async () => {
-    const session = buildSession();
-    onSaveSession(session);
-    setExporting(true);
-    try {
-      const msg = await exportAttendanceImage({
-        program,
-        semester,
-        subject,
-        students,
-        session,
-      });
-      notify(msg);
-    } catch (err) {
-      notify(err instanceof Error ? err.message : 'Failed to generate Image');
-    } finally {
-      setExporting(false);
+  const handleExportDaily = async (format: 'excel' | 'pdf' | 'image') => {
+    if (students.length === 0) {
+      showToast('No students to export attendance for.', true);
+      return;
     }
-  };
 
-  const handleSaveAndExportPdf = async () => {
     const session = buildSession();
-    onSaveSession(session);
-    setExporting(true);
     try {
-      const msg = await exportAttendancePdf({
-        program,
-        semester,
-        subject,
-        students,
-        session,
-      });
-      notify(msg);
-    } catch (err) {
-      notify(err instanceof Error ? err.message : 'Failed to generate PDF');
-    } finally {
-      setExporting(false);
+      await onSaveSession(session);
+    } catch {
+      // Continue to export
     }
-  };
-
-  const handleExportRegister = async () => {
-    const session = buildSession();
-    onSaveSession(session);
-    const allSubjectSessions = data.sessions
-      .filter((s) => s.subjectId === subject.id && s.id !== session.id)
-      .concat(session);
 
     setExporting(true);
     try {
-      const msg = await exportSubjectRegisterExcel({
-        program,
-        semester,
-        subject,
-        students,
-        sessions: allSubjectSessions,
-      });
-      notify(msg);
+      let msg = '';
+      if (format === 'excel') {
+        msg = await exportDailyAttendanceExcel({
+          program,
+          semester,
+          subject,
+          students,
+          session,
+        });
+      } else if (format === 'pdf') {
+        msg = await exportAttendancePdf({
+          program,
+          semester,
+          subject,
+          students,
+          session,
+        });
+      } else {
+        msg = await exportAttendanceImage({
+          program,
+          semester,
+          subject,
+          students,
+          session,
+        });
+      }
+      showToast(msg);
     } catch (err) {
-      notify(err instanceof Error ? err.message : 'Failed to generate Register');
+      showToast(
+        err instanceof Error ? err.message : `Failed to save ${format} to mobile`,
+        true
+      );
     } finally {
       setExporting(false);
     }
@@ -214,15 +203,15 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
       />
 
       <main className="mx-auto w-[90%] max-w-[540px] space-y-3">
-        {/* Date & Teacher Info Bar */}
-        <div className="rounded-2xl bg-white p-3.5">
+        {/* Date, Teacher & Summary Bar */}
+        <div className="rounded-2xl bg-white p-3.5 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-[#002B5B]/60">
                 Teacher
               </p>
               <p className="truncate text-sm font-semibold text-[#002B5B]">
-                {subject.teacherName}
+                {subject.teacherName || 'Not Assigned'}
               </p>
             </div>
             <div className="shrink-0 text-right">
@@ -233,29 +222,40 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                 type="date"
                 value={date}
                 onChange={(e) => handleDateChange(e.target.value)}
-                className="mt-0.5 rounded-xl bg-[#F8FAFF] px-2.5 py-1 text-xs font-medium text-[#002B5B] outline-none ring-1 ring-[#6495ED]/30"
+                className="mt-0.5 rounded-xl bg-[#F8FAFF] px-2.5 py-1 text-xs font-semibold text-[#002B5B] outline-none ring-1 ring-[#6495ED]/30"
               />
             </div>
           </div>
 
+          {/* Red instruction notice if attendance exists for this date */}
+          {existingSession && (
+            <div className="mt-2.5 rounded-xl bg-red-50 p-2.5 border border-red-200">
+              <p className="text-xs font-semibold text-red-600">
+                Attendance for {date} is already saved. Opened for editing. No duplicates will be created.
+              </p>
+            </div>
+          )}
+
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[#F0F4FF] pt-2.5">
             <div className="flex gap-1.5 text-[11px] font-semibold tabular-nums">
               <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-emerald-800">
-                P: {counts.present}
+                Present: {counts.present}
               </span>
               <span className="rounded-full bg-red-100 px-2.5 py-1 text-red-800">
-                A: {counts.absent}
+                Absent: {counts.absent}
               </span>
-              <span className="rounded-full bg-amber-100 px-2.5 py-1 text-amber-800">
-                L: {counts.leave}
-              </span>
+              {counts.leave > 0 && (
+                <span className="rounded-full bg-amber-100 px-2.5 py-1 text-amber-800">
+                  Leave: {counts.leave}
+                </span>
+              )}
             </div>
 
             {students.length > 0 && (
               <button
                 type="button"
                 onClick={markAllPresent}
-                className="rounded-full bg-[#6495ED]/20 px-3 py-1 text-[11px] font-semibold text-[#002B5B] active:opacity-75"
+                className="rounded-full bg-[#6495ED]/20 px-3 py-1 text-[11px] font-semibold text-[#002B5B] transition-all active:scale-95 hover:bg-[#6495ED]/30"
               >
                 Mark All Present
               </button>
@@ -263,17 +263,25 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
           </div>
         </div>
 
+        {/* Status Toast */}
         {statusMessage && (
-          <div className="animate-toast rounded-full bg-[#002B5B] px-4 py-2 text-center text-xs font-medium text-white">
-            {statusMessage}
+          <div
+            className={`animate-toast rounded-xl px-4 py-2.5 text-center text-xs font-semibold shadow-md ${
+              statusMessage.isError
+                ? 'bg-red-600 text-white'
+                : 'bg-[#002B5B] text-white'
+            }`}
+          >
+            {statusMessage.text}
           </div>
         )}
 
-        {/* Student List */}
+        {/* Student List or Red Instruction text for empty state */}
         {students.length === 0 ? (
-          <div className="rounded-2xl bg-white p-5 text-center text-sm text-[#002B5B]/70">
-            No students found in {program.name} ({semester.name}). Go to Setup
-            &gt; Students to add students first.
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-center shadow-sm">
+            <p className="text-sm font-semibold text-red-600">
+              No students added for {program.name} ({semester.name}). Please add students first in Setup.
+            </p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -282,7 +290,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
               return (
                 <div
                   key={stu.id}
-                  className="rounded-2xl bg-white p-3"
+                  className="rounded-2xl bg-white p-3 shadow-sm transition-all"
                 >
                   <div className="mb-2 flex items-center justify-between gap-2">
                     <p className="min-w-0 truncate text-sm font-semibold text-[#002B5B]">
@@ -292,8 +300,8 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                       {stu.name}
                     </p>
                     {stu.rollNo && (
-                      <span className="shrink-0 text-xs font-medium tabular-nums text-[#002B5B]/60">
-                        {stu.rollNo}
+                      <span className="shrink-0 rounded-md bg-[#F0F4FF] px-2 py-0.5 text-xs font-semibold tabular-nums text-[#002B5B]">
+                        Roll #{stu.rollNo}
                       </span>
                     )}
                   </div>
@@ -302,10 +310,10 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                     <button
                       type="button"
                       onClick={() => setStudentStatus(stu.id, 'present')}
-                      className={`rounded-full py-2 text-xs font-medium transition-all duration-150 active:scale-95 ${
+                      className={`rounded-xl py-2 text-xs font-semibold transition-all duration-150 active:scale-95 ${
                         current === 'present'
-                          ? 'bg-emerald-500 text-white'
-                          : 'bg-[#F0F4FF] text-[#002B5B]'
+                          ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-600/30'
+                          : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
                       }`}
                     >
                       Present
@@ -313,10 +321,10 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                     <button
                       type="button"
                       onClick={() => setStudentStatus(stu.id, 'absent')}
-                      className={`rounded-full py-2 text-xs font-medium transition-all duration-150 active:scale-95 ${
+                      className={`rounded-xl py-2 text-xs font-semibold transition-all duration-150 active:scale-95 ${
                         current === 'absent'
-                          ? 'bg-red-500 text-white'
-                          : 'bg-[#F0F4FF] text-[#002B5B]'
+                          ? 'bg-red-600 text-white shadow-sm ring-2 ring-red-600/30'
+                          : 'bg-red-50 text-red-800 hover:bg-red-100'
                       }`}
                     >
                       Absent
@@ -324,10 +332,10 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                     <button
                       type="button"
                       onClick={() => setStudentStatus(stu.id, 'leave')}
-                      className={`rounded-full py-2 text-xs font-medium transition-all duration-150 active:scale-95 ${
+                      className={`rounded-xl py-2 text-xs font-semibold transition-all duration-150 active:scale-95 ${
                         current === 'leave'
-                          ? 'bg-amber-500 text-white'
-                          : 'bg-[#F0F4FF] text-[#002B5B]'
+                          ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-500/30'
+                          : 'bg-amber-50 text-amber-800 hover:bg-amber-100'
                       }`}
                     >
                       Leave
@@ -338,58 +346,50 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
             })}
           </div>
         )}
-      </main>
 
-      {/* Bottom Action Bar */}
-      {students.length > 0 && (
-        <div className="safe-bottom fixed inset-x-0 bottom-0 z-20 bg-[#F8FAFF]/95 px-4 pt-2.5 backdrop-blur-sm">
-          <div className="mx-auto flex max-w-[540px] flex-col gap-1.5">
-            <div className="grid grid-cols-3 gap-1.5">
+        {/* Primary Save Attendance & Export Actions */}
+        {students.length > 0 && (
+          <div className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-[#E0EAFF] p-3 shadow-lg z-30">
+            <div className="mx-auto max-w-[540px] space-y-2">
               <button
                 type="button"
+                onClick={handleSaveAttendance}
                 disabled={exporting}
-                onClick={handleSaveAndExport}
-                className="w-full rounded-full bg-[#6495ED] py-3 text-xs font-semibold text-[#002B5B] transition-all duration-150 active:scale-95 active:opacity-80 disabled:opacity-50 sm:text-sm"
+                className="w-full rounded-full bg-[#002B5B] py-3 text-sm font-bold text-white shadow-md transition-all active:scale-98 hover:bg-[#002248]"
               >
-                {exporting ? 'Wait...' : 'Excel'}
+                Save Attendance
               </button>
-              <button
-                type="button"
-                disabled={exporting}
-                onClick={handleSaveAndExportPdf}
-                className="w-full rounded-full bg-[#6495ED] py-3 text-xs font-semibold text-[#002B5B] transition-all duration-150 active:scale-95 active:opacity-80 disabled:opacity-50 sm:text-sm"
-              >
-                {exporting ? 'Wait...' : 'PDF'}
-              </button>
-              <button
-                type="button"
-                disabled={exporting}
-                onClick={handleSaveAndExportImage}
-                className="w-full rounded-full bg-[#6495ED] py-3 text-xs font-semibold text-[#002B5B] transition-all duration-150 active:scale-95 active:opacity-80 disabled:opacity-50 sm:text-sm"
-              >
-                {exporting ? 'Wait...' : 'Image'}
-              </button>
-            </div>
-            <div className="grid grid-cols-2 gap-1.5">
-              <button
-                type="button"
-                onClick={handleSaveOnly}
-                className="rounded-full bg-[#6495ED]/20 py-2 text-xs font-semibold text-[#002B5B] active:opacity-75"
-              >
-                Save Only
-              </button>
-              <button
-                type="button"
-                disabled={exporting}
-                onClick={handleExportRegister}
-                className="rounded-full bg-[#6495ED]/20 py-2 text-xs font-semibold text-[#002B5B] active:opacity-75 disabled:opacity-50"
-              >
-                Full Subject Register
-              </button>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleExportDaily('excel')}
+                  disabled={exporting}
+                  className="flex-1 rounded-full bg-[#6495ED] py-2 text-xs font-semibold text-[#002B5B] shadow-sm transition-all active:scale-95"
+                >
+                  Save Excel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExportDaily('pdf')}
+                  disabled={exporting}
+                  className="flex-1 rounded-full bg-[#002B5B]/10 py-2 text-xs font-semibold text-[#002B5B] shadow-sm transition-all active:scale-95"
+                >
+                  Save PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExportDaily('image')}
+                  disabled={exporting}
+                  className="flex-1 rounded-full bg-[#6495ED]/20 py-2 text-xs font-semibold text-[#002B5B] shadow-sm transition-all active:scale-95"
+                >
+                  Save Image
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </main>
     </div>
   );
 };

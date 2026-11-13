@@ -94,7 +94,7 @@ export const SetupView: React.FC<SetupViewProps> = ({
     setSelectedSemesterId('');
     setNewProgramName('');
     setShowNewProgram(false);
-    showToast(`Program "${trimmed}" added to Home`);
+    showToast(`Program "${trimmed}" added`);
   };
 
   const handleDeleteProgram = (programId: string) => {
@@ -283,11 +283,11 @@ export const SetupView: React.FC<SetupViewProps> = ({
   };
 
   const renderProgramSemesterPicker = () => (
-    <div className="mb-5 space-y-3 rounded-3xl bg-white p-4">
+    <div className="mb-5 space-y-3 rounded-3xl bg-white p-4 shadow-sm border border-[#E0EAFF]">
       <div>
         <div className="mb-1.5 flex items-center justify-between">
           <label className="text-xs font-semibold uppercase tracking-wide text-[#002B5B]/70">
-            Program / Class
+            Program / Degree
           </label>
           <button
             type="button"
@@ -304,7 +304,7 @@ export const SetupView: React.FC<SetupViewProps> = ({
               type="text"
               value={newProgramName}
               onChange={(e) => setNewProgramName(e.target.value)}
-              placeholder="e.g. BBA, BSCS"
+              placeholder="e.g. BBA, BSCS, MBA"
               className="flex-1 rounded-2xl bg-[#F8FAFF] px-3.5 py-2.5 text-sm text-[#002B5B] outline-none ring-1 ring-[#6495ED]/30 focus:ring-2 focus:ring-[#6495ED]"
             />
             <button
@@ -315,32 +315,39 @@ export const SetupView: React.FC<SetupViewProps> = ({
             </button>
           </form>
         ) : (
-          <div className="flex items-center gap-2">
-            <select
-              value={activeProgramId}
-              onChange={(e) => {
-                setSelectedProgramId(e.target.value);
-                setSelectedSemesterId('');
-              }}
-              className="flex-1 rounded-2xl bg-[#F8FAFF] px-3.5 py-2.5 text-sm font-medium text-[#002B5B] outline-none ring-1 ring-[#6495ED]/30"
-            >
-              {data.programs.length === 0 && (
-                <option value="">No program yet — tap + Add Program</option>
-              )}
-              {data.programs.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-            {activeProgramId && (
-              <button
-                type="button"
-                onClick={() => handleDeleteProgram(activeProgramId)}
-                className="rounded-2xl bg-red-50 px-3 py-2.5 text-xs font-medium text-red-600"
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <select
+                value={activeProgramId}
+                onChange={(e) => {
+                  setSelectedProgramId(e.target.value);
+                  setSelectedSemesterId('');
+                }}
+                className="flex-1 rounded-2xl bg-[#F8FAFF] px-3.5 py-2.5 text-sm font-medium text-[#002B5B] outline-none ring-1 ring-[#6495ED]/30"
               >
-                Delete
-              </button>
+                {data.programs.length === 0 && (
+                  <option value="">No program added yet</option>
+                )}
+                {data.programs.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+              {activeProgramId && (
+                <button
+                  type="button"
+                  onClick={() => handleDeleteProgram(activeProgramId)}
+                  className="rounded-2xl bg-red-50 px-3 py-2.5 text-xs font-medium text-red-600"
+                >
+                  Delete
+                </button>
+              )}
+            </div>
+            {data.programs.length === 0 && (
+              <p className="text-xs font-semibold text-red-600">
+                No programs added yet. Please tap "+ Add Program" first.
+              </p>
             )}
           </div>
         )}
@@ -367,7 +374,7 @@ export const SetupView: React.FC<SetupViewProps> = ({
                 type="text"
                 value={newSemesterName}
                 onChange={(e) => setNewSemesterName(e.target.value)}
-                placeholder="e.g. 3rd Semester"
+                placeholder="e.g. 1st Semester, 3rd Semester"
                 className="flex-1 rounded-2xl bg-[#F8FAFF] px-3.5 py-2.5 text-sm text-[#002B5B] outline-none ring-1 ring-[#6495ED]/30 focus:ring-2 focus:ring-[#6495ED]"
               />
               <button
@@ -378,29 +385,36 @@ export const SetupView: React.FC<SetupViewProps> = ({
               </button>
             </form>
           ) : (
-            <div className="flex items-center gap-2">
-              <select
-                value={activeSemesterId}
-                onChange={(e) => setSelectedSemesterId(e.target.value)}
-                className="flex-1 rounded-2xl bg-[#F8FAFF] px-3.5 py-2.5 text-sm font-medium text-[#002B5B] outline-none ring-1 ring-[#6495ED]/30"
-              >
-                {programSemesters.length === 0 && (
-                  <option value="">No semester yet — tap + Add Semester</option>
-                )}
-                {programSemesters.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-              {activeSemesterId && (
-                <button
-                  type="button"
-                  onClick={() => handleDeleteSemester(activeSemesterId)}
-                  className="rounded-2xl bg-red-50 px-3 py-2.5 text-xs font-medium text-red-600"
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <select
+                  value={activeSemesterId}
+                  onChange={(e) => setSelectedSemesterId(e.target.value)}
+                  className="flex-1 rounded-2xl bg-[#F8FAFF] px-3.5 py-2.5 text-sm font-medium text-[#002B5B] outline-none ring-1 ring-[#6495ED]/30"
                 >
-                  Delete
-                </button>
+                  {programSemesters.length === 0 && (
+                    <option value="">No semester added yet</option>
+                  )}
+                  {programSemesters.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+                {activeSemesterId && (
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteSemester(activeSemesterId)}
+                    className="rounded-2xl bg-red-50 px-3 py-2.5 text-xs font-medium text-red-600"
+                  >
+                    Delete
+                  </button>
+                )}
+              </div>
+              {programSemesters.length === 0 && (
+                <p className="text-xs font-semibold text-red-600">
+                  No semesters added. Please add semesters first.
+                </p>
               )}
             </div>
           )}
@@ -450,7 +464,7 @@ export const SetupView: React.FC<SetupViewProps> = ({
       />
 
       {feedback && (
-        <div className="mx-auto mb-3 w-[90%] max-w-[540px] rounded-full bg-[#002B5B] px-4 py-2 text-center text-xs font-medium text-white">
+        <div className="mx-auto mb-3 w-[90%] max-w-[540px] rounded-full bg-[#002B5B] px-4 py-2 text-center text-xs font-medium text-white shadow-sm">
           {feedback}
         </div>
       )}
@@ -460,7 +474,7 @@ export const SetupView: React.FC<SetupViewProps> = ({
           <>
             <form
               onSubmit={handleAddTeacher}
-              className="mb-5 space-y-3 rounded-3xl bg-white p-4"
+              className="mb-5 space-y-3 rounded-3xl bg-white p-4 shadow-sm border border-[#E0EAFF]"
             >
               <h2 className="text-sm font-semibold text-[#002B5B]">
                 Add Teacher
@@ -482,7 +496,7 @@ export const SetupView: React.FC<SetupViewProps> = ({
               />
               <button
                 type="submit"
-                className="w-full rounded-full bg-[#6495ED] py-3 text-base font-medium text-[#002B5B] active:opacity-80"
+                className="w-full rounded-full bg-[#6495ED] py-3 text-base font-semibold text-[#002B5B] active:opacity-80"
               >
                 Add Teacher
               </button>
@@ -493,14 +507,16 @@ export const SetupView: React.FC<SetupViewProps> = ({
                 Saved Teachers ({data.teachers.length})
               </p>
               {data.teachers.length === 0 ? (
-                <p className="rounded-3xl bg-white p-5 text-center text-sm text-[#002B5B]/60">
-                  No teachers added yet.
-                </p>
+                <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-center shadow-sm">
+                  <p className="text-sm font-semibold text-red-600">
+                    No teachers added yet. Please add teachers first.
+                  </p>
+                </div>
               ) : (
                 data.teachers.map((t) => (
                   <div
                     key={t.id}
-                    className="flex items-center justify-between rounded-2xl bg-white px-4 py-3"
+                    className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 shadow-sm border border-[#E0EAFF]"
                   >
                     <div>
                       <p className="text-sm font-semibold text-[#002B5B]">
@@ -533,7 +549,7 @@ export const SetupView: React.FC<SetupViewProps> = ({
             {activeProgramId && activeSemesterId && (
               <form
                 onSubmit={handleAddSubject}
-                className="mb-5 space-y-3 rounded-3xl bg-white p-4"
+                className="mb-5 space-y-3 rounded-3xl bg-white p-4 shadow-sm border border-[#E0EAFF]"
               >
                 <h2 className="text-sm font-semibold text-[#002B5B]">
                   Add Subject
@@ -564,7 +580,7 @@ export const SetupView: React.FC<SetupViewProps> = ({
                 </div>
                 <button
                   type="submit"
-                  className="w-full rounded-full bg-[#6495ED] py-3 text-base font-medium text-[#002B5B] active:opacity-80"
+                  className="w-full rounded-full bg-[#6495ED] py-3 text-base font-semibold text-[#002B5B] active:opacity-80"
                 >
                   Add Subject
                 </button>
@@ -577,21 +593,23 @@ export const SetupView: React.FC<SetupViewProps> = ({
                   Subjects ({currentSubjects.length})
                 </p>
                 {currentSubjects.length === 0 ? (
-                  <p className="rounded-3xl bg-white p-5 text-center text-sm text-[#002B5B]/60">
-                    No subjects in this semester yet.
-                  </p>
+                  <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-center shadow-sm">
+                    <p className="text-sm font-semibold text-red-600">
+                      No subjects added. Please add subjects first.
+                    </p>
+                  </div>
                 ) : (
                   currentSubjects.map((sub) => (
                     <div
                       key={sub.id}
-                      className="flex items-center justify-between rounded-2xl bg-white px-4 py-3"
+                      className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 shadow-sm border border-[#E0EAFF]"
                     >
                       <div>
                         <p className="text-sm font-semibold text-[#002B5B]">
                           {sub.name}
                         </p>
                         <p className="text-xs text-[#002B5B]/65">
-                          Teacher: {sub.teacherName}
+                          Teacher: {sub.teacherName || 'Not Assigned'}
                         </p>
                       </div>
                       <button
@@ -614,7 +632,7 @@ export const SetupView: React.FC<SetupViewProps> = ({
             {renderProgramSemesterPicker()}
 
             {activeProgramId && activeSemesterId && (
-              <div className="mb-5 rounded-3xl bg-white p-4">
+              <div className="mb-5 rounded-3xl bg-white p-4 shadow-sm border border-[#E0EAFF]">
                 <div className="mb-3 flex items-center justify-between">
                   <h2 className="text-sm font-semibold text-[#002B5B]">
                     {bulkMode ? 'Bulk Add Students' : 'Add Student'}
@@ -637,9 +655,12 @@ export const SetupView: React.FC<SetupViewProps> = ({
                       placeholder={'One student per line:\n01 - Ali Khan\n02 - Sara Ahmed\n03 - Hamza Tariq'}
                       className="w-full rounded-2xl bg-[#F8FAFF] p-3.5 text-sm text-[#002B5B] outline-none ring-1 ring-[#6495ED]/30 focus:ring-2 focus:ring-[#6495ED]"
                     />
+                    <p className="text-xs font-semibold text-red-600">
+                      Format: RollNo - Student Name (one per line)
+                    </p>
                     <button
                       type="submit"
-                      className="w-full rounded-full bg-[#6495ED] py-3 text-base font-medium text-[#002B5B] active:opacity-80"
+                      className="w-full rounded-full bg-[#6495ED] py-3 text-base font-semibold text-[#002B5B] active:opacity-80"
                     >
                       Add All Students
                     </button>
@@ -663,7 +684,7 @@ export const SetupView: React.FC<SetupViewProps> = ({
                     />
                     <button
                       type="submit"
-                      className="w-full rounded-full bg-[#6495ED] py-3 text-base font-medium text-[#002B5B] active:opacity-80"
+                      className="w-full rounded-full bg-[#6495ED] py-3 text-base font-semibold text-[#002B5B] active:opacity-80"
                     >
                       Add Student
                     </button>
@@ -678,21 +699,23 @@ export const SetupView: React.FC<SetupViewProps> = ({
                   Students ({currentStudents.length})
                 </p>
                 {currentStudents.length === 0 ? (
-                  <p className="rounded-3xl bg-white p-5 text-center text-sm text-[#002B5B]/60">
-                    No students in this semester yet.
-                  </p>
+                  <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-center shadow-sm">
+                    <p className="text-sm font-semibold text-red-600">
+                      No students added. Please add students first.
+                    </p>
+                  </div>
                 ) : (
                   currentStudents.map((stu) => (
                     <div
                       key={stu.id}
-                      className="flex items-center justify-between rounded-2xl bg-white px-4 py-3"
+                      className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 shadow-sm border border-[#E0EAFF]"
                     >
                       <div>
                         <p className="text-sm font-semibold text-[#002B5B]">
                           {stu.name}
                         </p>
                         {stu.rollNo && (
-                          <p className="text-xs text-[#002B5B]/60">
+                          <p className="text-xs font-medium tabular-nums text-[#002B5B]/60">
                             Roll No: {stu.rollNo}
                           </p>
                         )}
